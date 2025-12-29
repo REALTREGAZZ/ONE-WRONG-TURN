@@ -23,6 +23,25 @@
         <div id="death-title" class="death-title">CRASH</div>
         <div id="death-reason" class="death-reason">You turned too late.</div>
         <button id="restart" class="primary">RESTART</button>
+        
+        <!-- Rewarded Ads Options -->
+        <div id="rewarded-options" class="rewarded-options hidden">
+          <div class="rewarded-title">Power-ups</div>
+          <div class="rewarded-buttons">
+            <button id="retry-btn" class="rewarded-btn" data-reward="retry">
+              <span class="reward-icon">⏮️</span>
+              <span class="reward-text">Retry from last turn</span>
+            </button>
+            <button id="slow-btn" class="rewarded-btn" data-reward="slow">
+              <span class="reward-icon">⏱️</span>
+              <span class="reward-text">Slow-motion boost</span>
+            </button>
+            <button id="ghost-btn" class="rewarded-btn" data-reward="ghost">
+              <span class="reward-icon">👻</span>
+              <span class="reward-text">Ghost car replay</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div id="hint" class="hint">
@@ -37,6 +56,11 @@
       </div>
 
       <div id="fade" class="fade"></div>
+      
+      <!-- Ad overlay for testing -->
+      <div id="ad-overlay" class="ad-overlay">
+        <div>📺 ADVERTISEMENT<br><small>Playing for 2 seconds...</small></div>
+      </div>
     </div>
 
     <script type="module" src="./game/main.js"></script>
