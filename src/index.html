@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>One Wrong Turn</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="hud" aria-live="polite">
+        <div class="hud-left">
+          <div class="label">DISTANCE</div>
+          <div id="distance" class="value">0</div>
+        </div>
+        <div class="hud-right">
+          <div class="label">BEST</div>
+          <div id="best" class="value">0</div>
+        </div>
+      </div>
+
+      <div id="center-message" class="center-message hidden">
+        <div id="death-title" class="death-title">CRASH</div>
+        <div id="death-reason" class="death-reason">You turned too late.</div>
+        <button id="restart" class="primary">RESTART</button>
+      </div>
+
+      <div id="hint" class="hint">
+        <div class="hint-line"><span class="key">A</span> / <span class="key">←</span> = LEFT</div>
+        <div class="hint-line"><span class="key">D</span> / <span class="key">→</span> = RIGHT</div>
+        <div class="hint-line subtle">One late turn = game over</div>
+      </div>
+
+      <div id="touch-controls" class="touch-controls" aria-hidden="true">
+        <button id="touch-left" class="touch-btn">LEFT</button>
+        <button id="touch-right" class="touch-btn">RIGHT</button>
+      </div>
+
+      <div id="fade" class="fade"></div>
+    </div>
+
+    <script type="module" src="./game/main.js"></script>
+  </body>
+</html>
