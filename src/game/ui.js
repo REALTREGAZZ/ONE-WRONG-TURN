@@ -2,9 +2,16 @@ import { pickRandom } from './helpers.js';
 import { DEATH_MESSAGES } from './config.js';
 
 export class UI {
+<<<<<<< HEAD
   constructor({ onRestart, onPointerSteer }) {
     this.onRestart = onRestart;
     this.onPointerSteer = onPointerSteer;
+=======
+  constructor({ onRestart, onPointerSteer, onRewardedAd }) {
+    this.onRestart = onRestart;
+    this.onPointerSteer = onPointerSteer;
+    this.onRewardedAd = onRewardedAd;
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
 
     this.elDistance = document.getElementById('distance');
     this.elBest = document.getElementById('best');
@@ -23,6 +30,7 @@ export class UI {
     this.steerLeft = false;
     this.steerRight = false;
 
+<<<<<<< HEAD
     this.elRestart.addEventListener('click', () => this.onRestart?.());
 
     this._bindTouchButtons();
@@ -34,6 +42,28 @@ export class UI {
       const set = (active) => {
         if (side === 'left') this.steerLeft = active;
         if (side === 'right') this.steerRight = active;
+=======
+    this.lastSteerTime = 0; // Track when player last steered
+
+    this.elRestart.addEventListener('click', () => this.onRestart?.());
+
+    this.bindTouchButtons();
+    this.bindRewardedButtons();
+    this.bindPointerSteer();
+  }
+
+  bindTouchButtons() {
+    const bind = (el, side) => {
+      const set = (active) => {
+        if (side === 'left') {
+          this.steerLeft = active;
+          if (active) this.updateSteerTime();
+        }
+        if (side === 'right') {
+          this.steerRight = active;
+          if (active) this.updateSteerTime();
+        }
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
       };
 
       el.addEventListener('pointerdown', (e) => {
@@ -53,6 +83,20 @@ export class UI {
     bind(this.elTouchRight, 'right');
   }
 
+<<<<<<< HEAD
+=======
+  bindRewardedButtons() {
+    const rewardButtons = document.querySelectorAll('.rewarded-btn');
+    
+    rewardButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rewardType = btn.dataset.reward;
+        if (this.onRewardedAd) this.onRewardedAd(rewardType);
+      });
+    });
+  }
+
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
   _bindPointerSteer() {
     const app = document.getElementById('app');
     if (!app) return;
@@ -93,14 +137,45 @@ export class UI {
     this.elHint.style.display = visible ? '' : 'none';
   }
 
+<<<<<<< HEAD
+=======
+  getLastSteerTime() {
+    return this.lastSteerTime;
+  }
+
+  updateSteerTime() {
+    this.lastSteerTime = performance.now();
+  }
+
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
   showDeath(reason = pickRandom(DEATH_MESSAGES)) {
     this.mode = 'crashed';
     this.elDeathReason.textContent = reason;
     this.elCenterMessage.classList.remove('hidden');
+<<<<<<< HEAD
+=======
+    
+    // Show rewarded ad options after death screen
+    setTimeout(() => {
+      const options = document.getElementById('rewarded-options');
+      if (options) {
+        options.classList.remove('hidden');
+      }
+    }, 500); // Wait 0.5s as specified in requirements
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
   }
 
   hideDeath() {
     this.elCenterMessage.classList.add('hidden');
     this.mode = 'playing';
+<<<<<<< HEAD
+=======
+    
+    // Hide rewarded options when restarting
+    const options = document.getElementById('rewarded-options');
+    if (options) {
+      options.classList.add('hidden');
+    }
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
   }
 }

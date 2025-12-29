@@ -164,6 +164,15 @@ button.primary {
   background: rgba(255, 255, 255, 0.10);
   color: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.12);
+<<<<<<< HEAD
+=======
+  transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.touch-btn:active {
+  background: rgba(49, 255, 150, 0.3);
+  transform: scale(0.95);
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
 }
 
 .fade {
@@ -183,3 +192,87 @@ button.primary {
     bottom: calc(86px + env(safe-area-inset-bottom));
   }
 }
+<<<<<<< HEAD
+=======
+
+/* Rewarded Ads Options */
+.rewarded-options {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rewarded-options.hidden {
+  display: none;
+}
+
+.rewarded-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 14px;
+  color: var(--accent);
+}
+
+.rewarded-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rewarded-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.1s ease;
+}
+
+.rewarded-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.rewarded-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.rewarded-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reward-icon {
+  font-size: 20px;
+}
+
+.reward-text {
+  flex: 1;
+  text-align: left;
+}
+
+/* Ad overlay for simulation */
+.ad-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  place-items: center;
+  z-index: 100;
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+}
+
+.ad-overlay.visible {
+  display: grid;
+}
+>>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
