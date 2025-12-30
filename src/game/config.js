@@ -61,6 +61,27 @@ export const CONFIG = {
     smoothness: 12, // Smoother camera for polish
     crashShakeSeconds: 0.2, // Exact 0.2s as specified
     crashShakeStrength: 0.4, // Punchier shake
+    fov: {
+      base: 62,
+      max: 77,
+      lerpFactor: 0.1,
+    },
+  },
+  speedLines: {
+    enabled: true,
+    particlesPerSecondAtMaxSpeed: 80,
+    particleSize: { width: 0.08, length: 3 },
+    lifespan: 0.4,
+    color: 0x00ffff,
+  },
+  sparks: {
+    enabled: true,
+    particlesPerGraze: 8,
+    lifespan: 0.2,
+    size: 0.08,
+    color: 0xff6600,
+    grazeThreshold: 0.15, // How close to wall before emitting sparks
+    speed: 8, // Particle explosion speed
   },
   crash: {
     freezeSeconds: 0.2, // Exact 0.2s slow-motion freeze
