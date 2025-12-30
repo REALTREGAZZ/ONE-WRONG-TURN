@@ -83,8 +83,8 @@ export class WheelTrails {
     const segmentLength = speed * 0.12; // Length proportional to speed
 
     // Rear wheel offsets relative to car center
-    const offsetX = 0.32;
-    const offsetZ = -0.4;
+    const offsetX = 0.4;
+    const offsetZ = -0.7;
 
     // Left wheel
     this.addParticle(car, -offsetX, offsetZ, this.config.leftColor, segmentLength);
