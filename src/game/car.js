@@ -181,4 +181,14 @@ export class Car {
       wheel.rotation.x = wheelRotation;
     });
   }
+
+  applySkin(skinColor, accessories = []) {
+    // Cambiar color del chasis y componentes
+    this.chassis.material.color.setHex(skinColor);
+    this.cabin.material.color.setHex(skinColor);
+    
+    // Update emissive color to match
+    this.chassis.material.emissive.setHex(skinColor);
+    this.cabin.material.emissive.setHex(skinColor);
+  }
 }

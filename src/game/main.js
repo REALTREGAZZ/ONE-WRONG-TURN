@@ -12,6 +12,8 @@ import { SpeedLines } from './speedLines.js';
 import { Sparks } from './sparks.js';
 import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
+import { CoinSystem } from './coinSystem.js';
+import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
 
 const app = document.getElementById('app');
 
@@ -104,11 +106,13 @@ const crashDebris = new CrashDebris(scene, {
 let lastTs = performance.now();
 let lastGrazeTime = 0;
 const GRAZE_COOLDOWN = 0.08;
-let mode = 'playing'; // 'playing' | 'crashed'
+let mode = 'menu'; // 'menu' | 'playing' | 'crashed' | 'shop' | 'stats'
 let freezeT = 0;
 let showDeathAfterFreeze = false;
 let distance = 0;
 let best = Number(localStorage.getItem('owt_best') || '0');
+let gamesPlayed = Number(localStorage.getItem('owt_games_played') || '0');
+let totalDistance = Number(localStorage.getItem('owt_total_distance') || '0');
 
 let hintT = 4.0;
 let pulseTime = 0;
@@ -120,6 +124,10 @@ const keys = {
 
 let pointerSteer = 0;
 let pointerSteerT = 0;
+
+// Sistemas nuevos
+const coinSystem = new CoinSystem();
+const shopSystem = new ShopSystem(coinSystem);
 
 const ui = new UI({
   onRestart: () => restart(),
@@ -134,6 +142,88 @@ ui.setBest(best);
 
 const crashFlashEl = document.getElementById('crash-flash');
 let crashFlashTimer = 0;
+
+// Elementos de UI HTML
+const menuMain = document.getElementById('menu-main');
+const menuShop = document.getElementById('menu-shop');
+const menuStats = document.getElementById('menu-stats');
+const hudIngame = document.getElementById('hud-ingame');
+const deathScreen = document.getElementById('death-screen');
+
+deathScreen.classList.add('hidden');
+
+// Actualizar contador de monedas
+function updateCoinDisplays() {
+  const totalCoins = coinSystem.getTotal();
+  const coinCountEl = document.getElementById('coin-count');
+  const shopCoinCountEl = document.getElementById('shop-coin-count');
+  const statsTotalCoinsEl = document.getElementById('stats-total-coins');
+  
+  if (coinCountEl) coinCountEl.textContent = totalCoins;
+  if (shopCoinCountEl) shopCoinCountEl.textContent = totalCoins;
+  if (statsTotalCoinsEl) statsTotalCoinsEl.textContent = totalCoins;
+}
+
+// Renderizar tienda
+function renderShop() {
+  const skinsContainer = document.getElementById('shop-skins');
+  const accessoriesContainer = document.getElementById('shop-accessories');
+  
+  if (!skinsContainer || !accessoriesContainer) return;
+  
+  // Limpiar contenedores
+  skinsContainer.innerHTML = '';
+  accessoriesContainer.innerHTML = '';
+  
+  // Renderizar skins
+  SHOP_ITEMS.skins.forEach(skin => {
+    const itemEl = createShopItem(skin, 'skin');
+    skinsContainer.appendChild(itemEl);
+  });
+  
+  // Renderizar accesorios
+  SHOP_ITEMS.accessories.forEach(accessory => {
+    const itemEl = createShopItem(accessory, 'accessory');
+    accessoriesContainer.appendChild(itemEl);
+  });
+}
+
+function createShopItem(item, type) {
+  const itemEl = document.createElement('div');
+  itemEl.className = 'shop-item';
+  
+  const isSelected = type === 'skin' ? shopSystem.selectedSkin === item.id : shopSystem.isAccessoryActive(item.id);
+  const isOwned = item.owned;
+  
+  if (isSelected) itemEl.classList.add('selected');
+  if (isOwned) itemEl.classList.add('owned');
+  
+  itemEl.innerHTML = `
+    <div class="item-name">${item.name}</div>
+    <div class="item-description">${item.description}</div>
+    <div class="item-price ${isOwned ? 'owned' : ''}">${isOwned ? 'OWNED' : item.price}</div>
+  `;
+  
+  itemEl.addEventListener('click', () => {
+    if (isOwned) {
+      if (type === 'skin') {
+        shopSystem.applySkin(item.id);
+        car.applySkin(item.color);
+      } else {
+        shopSystem.toggleAccessory(item.id);
+      }
+      renderShop();
+    } else {
+      if (coinSystem.getTotal() >= item.price) {
+        shopSystem.purchaseItem(item.id);
+        updateCoinDisplays();
+        renderShop();
+      }
+    }
+  });
+  
+  return itemEl;
+}
 
 function crashFlash() {
   if (!crashFlashEl) return;
@@ -183,6 +273,15 @@ function crash() {
   showDeathAfterFreeze = true;
   hintT = 0;
   
+  // Ganar monedas
+  const earned = coinSystem.earnCoins(distance);
+  gamesPlayed++;
+  totalDistance += distance;
+  
+  // Actualizar stats
+  localStorage.setItem('owt_games_played', String(gamesPlayed));
+  localStorage.setItem('owt_total_distance', String(totalDistance));
+  
   audio.playCrash();
   followCamera.startCrashShake();
   crashFlash();
@@ -203,6 +302,7 @@ function completeRestart() {
   freezeT = 0;
   showDeathAfterFreeze = false;
   distance = 0;
+  coinSystem.reset();
   hintT = 3.5;
   lastGrazeTime = 0;
 
@@ -220,7 +320,15 @@ function completeRestart() {
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
+  // Ocultar pantalla de muerte
+  deathScreen.classList.add('hidden');
+  
+  // Mostrar HUD
+  hudIngame.classList.remove('hidden');
+
+  // Actualizar UI
   ui.hideDeath();
+  ui.setBest(best);
   ui.setDistance(0);
 
   gameplayStart();
@@ -231,6 +339,7 @@ function startRun() {
   freezeT = 0;
   showDeathAfterFreeze = false;
   distance = 0;
+  coinSystem.reset();
   hintT = 3.5;
   lastGrazeTime = 0;
 
@@ -250,6 +359,42 @@ function startRun() {
   gameplayStart();
 }
 
+function showMenu() {
+  mode = 'menu';
+  menuMain.classList.remove('hidden');
+  menuShop.classList.add('hidden');
+  menuStats.classList.add('hidden');
+  hudIngame.classList.add('hidden');
+  deathScreen.classList.add('hidden');
+  updateCoinDisplays();
+}
+
+function showShop() {
+  mode = 'shop';
+  menuMain.classList.add('hidden');
+  menuShop.classList.remove('hidden');
+  menuStats.classList.add('hidden');
+  hudIngame.classList.add('hidden');
+  deathScreen.classList.add('hidden');
+  renderShop();
+  updateCoinDisplays();
+}
+
+function showStats() {
+  mode = 'stats';
+  menuMain.classList.add('hidden');
+  menuShop.classList.add('hidden');
+  menuStats.classList.remove('hidden');
+  hudIngame.classList.add('hidden');
+  deathScreen.classList.add('hidden');
+  
+  // Actualizar stats
+  document.getElementById('stats-best').textContent = `${Math.floor(best)}m`;
+  document.getElementById('stats-total-coins').textContent = coinSystem.getTotal();
+  document.getElementById('stats-games-played').textContent = gamesPlayed;
+  document.getElementById('stats-total-distance').textContent = `${Math.floor(totalDistance)}m`;
+}
+
 function onResize() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -261,31 +406,83 @@ window.addEventListener('resize', onResize);
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
-    keys.right = true;
-    hintT = 0;
-    e.preventDefault();
-  }
-  if (e.code === 'KeyD' || e.code === 'ArrowRight') {
     keys.left = true;
     hintT = 0;
     e.preventDefault();
   }
-  
-  if ((e.code === 'Space' || e.code === 'Enter') && mode === 'crashed') {
-    restart();
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') {
+    keys.right = true;
+    hintT = 0;
     e.preventDefault();
+  }
+  
+  if ((e.code === 'Space' || e.code === 'Enter')) {
+    if (mode === 'crashed') {
+      restart();
+      e.preventDefault();
+    }
   }
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.right = false;
-  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.left = false;
+  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
 });
 
 window.addEventListener('pointerdown', (e) => {
-  if (mode !== 'crashed') return;
   if (e.target instanceof Element && e.target.closest('button')) return;
+  
+  if (mode === 'crashed' && !deathScreen.classList.contains('hidden')) {
+    restart();
+  }
+});
+
+// Botones de menú
+document.getElementById('btn-play')?.addEventListener('click', () => {
+  menuMain.classList.add('hidden');
+  hudIngame.classList.remove('hidden');
+  startRun();
+});
+
+document.getElementById('btn-shop')?.addEventListener('click', () => {
+  showShop();
+});
+
+document.getElementById('btn-stats')?.addEventListener('click', () => {
+  showStats();
+});
+
+document.getElementById('btn-back-shop')?.addEventListener('click', () => {
+  showMenu();
+});
+
+document.getElementById('btn-back-stats')?.addEventListener('click', () => {
+  showMenu();
+});
+
+document.getElementById('btn-retry')?.addEventListener('click', () => {
   restart();
+});
+
+document.getElementById('btn-menu')?.addEventListener('click', () => {
+  showMenu();
+});
+
+// Tabs de tienda
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    
+    // Actualizar tabs activos
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Mostrar contenido correspondiente
+    document.querySelectorAll('.shop-content').forEach(content => {
+      content.classList.add('hidden');
+    });
+    document.getElementById(`shop-${tab}`).classList.remove('hidden');
+  });
 });
 
 renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -316,7 +513,15 @@ function frame(ts) {
     if (freezeT === 0 && showDeathAfterFreeze) {
       showDeathAfterFreeze = false;
       
-      ui.showDeath(pickRandom(DEATH_MESSAGES));
+      // Mostrar pantalla de muerte
+      const deathMsg = pickRandom(DEATH_MESSAGES);
+      document.getElementById('death-msg').textContent = deathMsg;
+      document.getElementById('death-distance').textContent = `${Math.floor(distance)}m`;
+      document.getElementById('death-coins').textContent = `+${coinSystem.getCurrentEarned()}`;
+      document.getElementById('death-best').textContent = `${Math.floor(best)}m`;
+      
+      deathScreen.classList.remove('hidden');
+      hudIngame.classList.add('hidden');
       
       if (distance > best) {
         best = distance;
@@ -356,6 +561,15 @@ function frame(ts) {
     if (collision.crashed) crash();
 
     ui.setDistance(distance);
+    
+    // Actualizar HUD
+    document.getElementById('hud-distance').textContent = `${Math.floor(distance)}m`;
+    document.getElementById('hud-speed').textContent = `${Math.floor(speed)}`;
+    document.getElementById('hud-best').textContent = `${Math.floor(best)}m`;
+    
+    // Actualizar monedas ganadas en tiempo real
+    const earned = coinSystem.calculateCoinsForDistance(distance);
+    document.getElementById('hud-coins-earned').textContent = `+${earned}`;
 
     wheelTrails.update(simDt, car, speed, CONFIG.difficulty.speed.maxSpeed);
     speedLines.emit(speedRatio);
@@ -375,7 +589,11 @@ function frame(ts) {
   renderer.render(scene, camera);
 }
 
-startRun();
+// Aplicar skin inicial
+car.applySkin(shopSystem.getSelectedSkinColor());
+
+// Iniciar con el menú
+showMenu();
 requestAnimationFrame(frame);
 
 // Debug tools (clean, no ad testing)
@@ -383,6 +601,8 @@ window.gameDebug = {
   getPerformanceMetrics: () => {
     return { mobileMode: isMobile };
   },
+  coinSystem,
+  shopSystem
 };
 
 console.log('One Wrong Turn - Ready for Poki');

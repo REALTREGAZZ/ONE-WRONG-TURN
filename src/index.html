@@ -7,8 +7,135 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <!-- Pantalla de Inicio -->
+    <div id="menu-main" class="menu-screen">
+      <div class="menu-container">
+        <h1 class="game-title">ONE WRONG TURN</h1>
+        <p class="subtitle">Push your limits. One mistake and you're done.</p>
+        
+        <button id="btn-play" class="btn btn-primary">PLAY</button>
+        <button id="btn-shop" class="btn btn-secondary">SHOP</button>
+        <button id="btn-stats" class="btn btn-tertiary">STATS</button>
+        
+        <div class="coin-display">
+          <div class="coin-icon">💰</div>
+          <span id="coin-count">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla de Tienda -->
+    <div id="menu-shop" class="menu-screen hidden">
+      <div class="shop-container">
+        <h2>CUSTOMIZE YOUR RIDE</h2>
+        
+        <div class="shop-tabs">
+          <button class="tab-btn active" data-tab="skins">SKINS</button>
+          <button class="tab-btn" data-tab="accessories">ACCESSORIES</button>
+        </div>
+        
+        <div class="coin-display shop-coin-display">
+          <div class="coin-icon">💰</div>
+          <span id="shop-coin-count">0</span>
+        </div>
+        
+        <div class="shop-content active" id="shop-skins">
+          <!-- Skins dinámicos aquí -->
+        </div>
+        
+        <div class="shop-content hidden" id="shop-accessories">
+          <!-- Accesorios dinámicos aquí -->
+        </div>
+        
+        <button id="btn-back-shop" class="btn btn-back">BACK</button>
+      </div>
+    </div>
+
+    <!-- Pantalla de Stats -->
+    <div id="menu-stats" class="menu-screen hidden">
+      <div class="stats-container">
+        <h2>STATS</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <label>Best Distance</label>
+            <span id="stats-best">0m</span>
+          </div>
+          <div class="stat-item">
+            <label>Total Coins</label>
+            <span id="stats-total-coins">0</span>
+          </div>
+          <div class="stat-item">
+            <label>Games Played</label>
+            <span id="stats-games-played">0</span>
+          </div>
+          <div class="stat-item">
+            <label>Total Distance</label>
+            <span id="stats-total-distance">0m</span>
+          </div>
+        </div>
+        <button id="btn-back-stats" class="btn btn-back">BACK</button>
+      </div>
+    </div>
+
+    <!-- HUD en-juego -->
+    <div id="hud-ingame" class="hud-container">
+      <div class="hud-top-left">
+        <div class="stat-box">
+          <label>DISTANCE</label>
+          <span id="hud-distance">0m</span>
+        </div>
+        <div class="stat-box">
+          <label>SPEED</label>
+          <span id="hud-speed">0</span>
+        </div>
+      </div>
+      
+      <div class="hud-top-right">
+        <div class="stat-box">
+          <label>BEST</label>
+          <span id="hud-best">0m</span>
+        </div>
+        <div class="coin-hud">
+          <div class="coin-icon small">💰</div>
+          <span id="hud-coins-earned">+0</span>
+        </div>
+      </div>
+      
+      <div class="hud-center">
+        <div id="hint" class="hint-box">
+          Press <span class="key">A</span> or <span class="key">D</span> to steer
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla de Muerte -->
+    <div id="death-screen" class="death-overlay hidden">
+      <div class="death-container">
+        <div class="death-message" id="death-msg">TOO GREEDY</div>
+        
+        <div class="death-stats">
+          <div class="stat-row">
+            <span>Distance</span>
+            <span id="death-distance">0m</span>
+          </div>
+          <div class="stat-row">
+            <span>Coins Earned</span>
+            <span id="death-coins" class="coins">+0</span>
+          </div>
+          <div class="stat-row">
+            <span>Personal Best</span>
+            <span id="death-best">0m</span>
+          </div>
+        </div>
+        
+        <button id="btn-retry" class="btn btn-primary">RETRY</button>
+        <button id="btn-menu" class="btn btn-secondary">MENU</button>
+      </div>
+    </div>
+
+    <!-- Contenedor de juego -->
     <div id="app">
-      <div id="hud" aria-live="polite">
+      <div id="hud" class="hidden" aria-live="polite">
         <div class="hud-left">
           <div class="label">DISTANCE</div>
           <div id="distance" class="value">0</div>
