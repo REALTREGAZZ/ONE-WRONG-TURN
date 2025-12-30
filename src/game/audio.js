@@ -59,4 +59,8 @@ export class AudioManager {
   playClick() {
     this._beep({ freq: 540, duration: 0.04, type: 'square', gain: 0.55 });
   }
+
+  playGraze() {
+    this._beep({ freq: 280, duration: 0.03, type: 'square', gain: 0.35 });
+  }
 }

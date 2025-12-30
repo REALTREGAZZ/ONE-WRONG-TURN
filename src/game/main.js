@@ -8,6 +8,8 @@ import { UI } from './ui.js';
 import { FollowCamera } from './camera.js';
 import { AudioManager } from './audio.js';
 import { gameplayStart, gameplayStop, showInterstitialAd } from './adSystem.js';
+import { SpeedLines } from './speedLines.js';
+import { Sparks } from './sparks.js';
 
 const app = document.getElementById('app');
 
@@ -52,8 +54,12 @@ const car = new Car(CONFIG.car);
 scene.add(car.group);
 
 const followCamera = new FollowCamera(camera, CONFIG.camera);
+const speedLines = new SpeedLines(scene, CONFIG.speedLines);
+const sparks = new Sparks(scene, CONFIG.sparks);
 
 let lastTs = performance.now();
+let lastGrazeTime = 0;
+const GRAZE_COOLDOWN = 0.08;
 let mode = 'playing'; // 'playing' | 'crashed'
 let freezeT = 0;
 let showDeathAfterFreeze = false;
@@ -100,10 +106,12 @@ function currentSpeed() {
   // Progressive difficulty: speed increases over distance
   const elapsedTime = distance / CONFIG.difficulty.speed.baseSpeed;
   const speedIncrement = elapsedTime * CONFIG.difficulty.speed.incrementPerSecond;
-  return Math.min(
+  const speed = Math.min(
     CONFIG.difficulty.speed.baseSpeed + speedIncrement,
     CONFIG.difficulty.speed.maxSpeed
   );
+  const speedRatio = (speed - CONFIG.difficulty.speed.baseSpeed) / (CONFIG.difficulty.speed.maxSpeed - CONFIG.difficulty.speed.baseSpeed);
+  return { speed, speedRatio };
 }
 
 function crash() {
@@ -127,24 +135,27 @@ function restart() {
 
 function completeRestart() {
   audio.playClick();
-  
+
   mode = 'playing';
   freezeT = 0;
   showDeathAfterFreeze = false;
   distance = 0;
   hintT = 3.5;
-  
+  lastGrazeTime = 0;
+
   keys.left = false;
   keys.right = false;
   pointerSteer = 0;
   pointerSteerT = 0;
-  
+
   car.reset();
   world.reset();
-  
+  speedLines.reset();
+  sparks.reset();
+
   ui.hideDeath();
   ui.setDistance(0);
-  
+
   gameplayStart();
 }
 
@@ -154,14 +165,17 @@ function startRun() {
   showDeathAfterFreeze = false;
   distance = 0;
   hintT = 3.5;
-  
+  lastGrazeTime = 0;
+
   car.reset();
   world.reset();
-  
+  speedLines.reset();
+  sparks.reset();
+
   ui.hideDeath();
   ui.setBest(best);
   ui.setDistance(0);
-  
+
   gameplayStart();
 }
 
@@ -242,21 +256,40 @@ function frame(ts) {
   }
   
   if (mode === 'playing') {
-    const speed = currentSpeed();
+    const { speed, speedRatio } = currentSpeed();
     const steer = getSteer();
-  
+
     car.update(simDt, steer, speed);
     distance = car.group.position.z;
-  
+
     world.update(distance);
-  
+
     const road = world.sampleRoad(distance);
-    if (checkWallCollision(car, road)) crash();
-  
+    const collision = checkWallCollision(car, road);
+
+    if (collision.grazed) {
+      const currentTime = ts / 1000;
+      if (currentTime - lastGrazeTime >= GRAZE_COOLDOWN) {
+        lastGrazeTime = currentTime;
+        audio.playGraze();
+        sparks.emit(car.group.position.clone(), collision.normal);
+      }
+    }
+
+    if (collision.crashed) crash();
+
     ui.setDistance(distance);
+
+    speedLines.emit(speedRatio);
+    speedLines.update(simDt, speedRatio);
+    sparks.update(simDt);
+
+    followCamera.update(dtRaw, car.group, speedRatio);
+  } else {
+    followCamera.update(dtRaw, car.group, 0);
+    sparks.update(simDt);
   }
-  
-  followCamera.update(dtRaw, car.group);
+
   renderer.render(scene, camera);
 }
 
