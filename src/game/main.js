@@ -7,7 +7,7 @@ import { checkWallCollision } from './collision.js';
 import { UI } from './ui.js';
 import { FollowCamera } from './camera.js';
 import { AudioManager } from './audio.js';
-import { gameplayStart, gameplayStop, showInterstitialAd, showRewardedAd, adAnalytics } from './adSystem.js';
+import { gameplayStart, gameplayStop, showInterstitialAd } from './adSystem.js';
 
 const app = document.getElementById('app');
 
@@ -59,7 +59,6 @@ let freezeT = 0;
 let showDeathAfterFreeze = false;
 let distance = 0;
 let best = Number(localStorage.getItem('owt_best') || '0');
-let deaths = Number(localStorage.getItem('owt_deaths') || '0');
 
 let hintT = 4.0;
 
@@ -79,17 +78,6 @@ const ui = new UI({
     pointerSteerT = 0.14;
     hintT = 0;
   },
-  onRewardedAd: async (rewardType) => {
-    // Handler for rewarded ads
-    if (mode !== 'crashed') return;
-    
-    console.log(`🎁 Jugador eligió recompensa: ${rewardType}`);
-    const success = await showRewardedAd(rewardType);
-    
-    if (success) {
-      applyReward(rewardType);
-    }
-  },
 });
 ui.setBest(best);
 
@@ -108,33 +96,9 @@ function getSteer() {
   return steer;
 }
 
-function getContextualDeathMessage() {
-  const elapsedTime = distance / currentSpeed(); // Approximate time survived
-  const lastSteerTime = ui.getLastSteerTime(); // Need to add this to UI class
-  
-  // If crashed quickly (first 10 seconds)
-  if (elapsedTime < 10) {
-    return 'You hesitated.';
-  }
-  
-  // If survived long time (over 60 seconds)
-  if (elapsedTime > 60) {
-    return 'Too greedy.';
-  }
-  
-  // If frontal collision (not turning or turning late)
-  const steer = getSteer();
-  if (steer === 0) {
-    return 'Turned too late.';
-  }
-  
-  // Default/fallback
-  return pickRandom(DEATH_MESSAGES);
-}
-
 function currentSpeed() {
-  // Progressive difficulty: +2 units/sec every 5 seconds, max 98 units/sec
-  const elapsedTime = distance / CONFIG.difficulty.speed.baseSpeed; // Approximate time
+  // Progressive difficulty: speed increases over distance
+  const elapsedTime = distance / CONFIG.difficulty.speed.baseSpeed;
   const speedIncrement = elapsedTime * CONFIG.difficulty.speed.incrementPerSecond;
   return Math.min(
     CONFIG.difficulty.speed.baseSpeed + speedIncrement,
@@ -150,9 +114,6 @@ function crash() {
   showDeathAfterFreeze = true;
   hintT = 0;
   
-  deaths += 1;
-  localStorage.setItem('owt_deaths', String(deaths));
-  
   audio.playCrash();
   followCamera.startCrashShake();
   
@@ -161,18 +122,6 @@ function crash() {
 
 function restart() {
   if (mode === 'playing') return;
-  
-  // Show interstitial ad every 2-3 deaths (not on immediate restart after ad)
-  if (deaths > 0 && deaths % 2 === 0) {
-    // Use async function for ad display
-    (async () => {
-      await showInterstitialAd();
-      // Continue restart after ad completes
-      completeRestart();
-    })();
-    return;
-  }
-  
   completeRestart();
 }
 
@@ -199,34 +148,6 @@ function completeRestart() {
   gameplayStart();
 }
 
-function applyReward(rewardType) {
-  console.log(`🎉 Aplicando recompensa: ${rewardType}`);
-  
-  switch (rewardType) {
-    case 'retry':
-      // Retry from last turn (simplified: just give extra life for now)
-      console.log('⏮️ Recompensa: Retry from last turn');
-      completeRestart();
-      break;
-      
-    case 'slow':
-      // Slow-motion boost (not implemented - would need slow-mo system)
-      console.log('⏱️ Recompensa: Slow-motion boost');
-      completeRestart();
-      break;
-      
-    case 'ghost':
-      // Ghost car replay (not implemented - would need replay system)
-      console.log('👻 Recompensa: Ghost car replay');
-      completeRestart();
-      break;
-      
-    default:
-      console.warn(`Recompensa desconocida: ${rewardType}`);
-      completeRestart();
-  }
-}
-
 function startRun() {
   mode = 'playing';
   freezeT = 0;
@@ -240,6 +161,7 @@ function startRun() {
   ui.hideDeath();
   ui.setBest(best);
   ui.setDistance(0);
+  
   gameplayStart();
 }
 
@@ -253,34 +175,26 @@ function onResize() {
 window.addEventListener('resize', onResize);
 
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+  if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
     keys.left = true;
     hintT = 0;
-    ui.updateSteerTime(); // Track steer time for contextual messages
     e.preventDefault();
   }
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') {
     keys.right = true;
     hintT = 0;
-    ui.updateSteerTime(); // Track steer time for contextual messages
     e.preventDefault();
   }
   
-  if ((e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyR') && mode === 'crashed') {
+  if ((e.code === 'Space' || e.code === 'Enter') && mode === 'crashed') {
     restart();
     e.preventDefault();
   }
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
-    keys.left = false;
-    e.preventDefault();
-  }
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-    keys.right = false;
-    e.preventDefault();
-  }
+  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
 });
 
 window.addEventListener('pointerdown', (e) => {
@@ -294,7 +208,7 @@ renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 function frame(ts) {
   requestAnimationFrame(frame);
   
-  const dtRaw = Math.min(0.05, (ts - lastTs) / 1000);
+  const dtRaw = Math.min(0.033, (ts - lastTs) / 1000);
   lastTs = ts;
   
   if (pointerSteerT > 0) {
@@ -317,8 +231,7 @@ function frame(ts) {
     if (freezeT === 0 && showDeathAfterFreeze) {
       showDeathAfterFreeze = false;
       
-      // Use contextual death messages based on crash circumstances
-      ui.showDeath(getContextualDeathMessage());
+      ui.showDeath(pickRandom(DEATH_MESSAGES));
       
       if (distance > best) {
         best = distance;
@@ -347,41 +260,14 @@ function frame(ts) {
   renderer.render(scene, camera);
 }
 
-// Performance monitoring
-let frameCount = 0;
-let lastPerfTime = performance.now();
-let frameTimes = [];
-
 startRun();
 requestAnimationFrame(frame);
 
-// Expose debugging tools
+// Debug tools (clean, no ad testing)
 window.gameDebug = {
-  adAnalytics: adAnalytics,
   getPerformanceMetrics: () => {
-    const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-    const fps = 1000 / avgFrameTime;
-    return {
-      fps: Math.round(fps),
-      avgFrameTime: avgFrameTime.toFixed(2),
-      frameCount: frameCount,
-      mobileMode: isMobile
-    };
+    return { mobileMode: isMobile };
   },
-  
-  testRewards: () => {
-    console.log('🧪 Probando sistema de recompensas...');
-    ui.showDeath('You turned too late.'); // Show death screen
-    setTimeout(() => {
-      applyReward('retry');
-    }, 1500);
-  },
-  
-  testInterstitial: () => {
-    console.log('🧪 Probando anuncio intersticial...');
-    showInterstitialAd();
-  }
 };
 
-console.log('🎮 One Wrong Turn - Pulido, Optimizado y Listo para Poki');
-console.log('📊 Disponibles herramientas de depuración: gameDebug.testRewards(), gameDebug.testInterstitial(), gameDebug.getPerformanceMetrics()');
+console.log('One Wrong Turn - Ready for Poki');

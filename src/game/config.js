@@ -1,22 +1,22 @@
 export const CONFIG = {
   difficulty: {
-    // Refined curve for viral frustration and engagement
+    // Moderate speed curve for balanced gameplay
     maxDistance: 800,
     speed: {
-      baseSpeed: 50, // Base 50 units/sec
-      incrementPerSecond: 0.4, // +2 units/sec every 5 seconds (0.4 per second)
-      maxSpeed: 98, // Peak around 60-80 seconds
+      baseSpeed: 25, // Base 25 units/sec (moderate)
+      incrementPerSecond: 0.2, // +1 unit/sec every 5 seconds
+      maxSpeed: 60, // Peak around 60 units/sec
     }
   },
   car: {
     width: 0.85,
     length: 1.35,
     height: 0.55,
-    baseSpeed: 50,
-    maxSpeed: 98,
+    baseSpeed: 25,
+    maxSpeed: 60,
 
-    steeringRate: 3.5, // Slightly faster for better control
-    maxYaw: Math.PI * 0.38,
+    steeringRate: 2.0, // Controlled steering
+    maxYaw: Math.PI * 0.25, // Bounded maximum turn
     autoCenterRate: 7.5,
   },
   road: {
