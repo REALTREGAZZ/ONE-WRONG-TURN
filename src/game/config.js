@@ -66,9 +66,9 @@ export const CONFIG = {
     }
   },
   car: {
-    width: 0.85,
-    length: 1.35,
-    height: 0.55,
+    width: 2.0,
+    length: 1.2,
+    height: 0.8,
     baseSpeed: 25,
     maxSpeed: 60,
 
