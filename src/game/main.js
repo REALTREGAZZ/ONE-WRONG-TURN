@@ -176,12 +176,12 @@ window.addEventListener('resize', onResize);
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
-    keys.left = true;
+    keys.right = true;
     hintT = 0;
     e.preventDefault();
   }
   if (e.code === 'KeyD' || e.code === 'ArrowRight') {
-    keys.right = true;
+    keys.left = true;
     hintT = 0;
     e.preventDefault();
   }
@@ -193,8 +193,8 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
-  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
+  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.right = false;
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.left = false;
 });
 
 window.addEventListener('pointerdown', (e) => {
