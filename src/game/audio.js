@@ -51,9 +51,79 @@ export class AudioManager {
   }
 
   playCrash() {
-    // Harsh, instant cue.
-    this._beep({ freq: 110, duration: 0.12, type: 'sawtooth', gain: 0.9 });
-    this._beep({ freq: 55, duration: 0.18, type: 'square', gain: 0.65 });
+    if (!this.ctx || !this.master) return;
+
+    const now = this.ctx.currentTime;
+    const out = this.ctx.createGain();
+    out.gain.value = 1;
+    out.connect(this.master);
+
+    const boomOsc = this.ctx.createOscillator();
+    boomOsc.type = 'sine';
+    boomOsc.frequency.setValueAtTime(70, now);
+    boomOsc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+
+    const boomGain = this.ctx.createGain();
+    boomGain.gain.setValueAtTime(0.0001, now);
+    boomGain.gain.exponentialRampToValueAtTime(0.8, now + 0.05);
+    boomGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+
+    boomOsc.connect(boomGain);
+    boomGain.connect(out);
+    boomOsc.start(now);
+    boomOsc.stop(now + 0.31);
+
+    const ringOsc = this.ctx.createOscillator();
+    ringOsc.type = 'triangle';
+    ringOsc.frequency.setValueAtTime(220, now);
+    ringOsc.frequency.exponentialRampToValueAtTime(110, now + 0.25);
+
+    const ringGain = this.ctx.createGain();
+    ringGain.gain.setValueAtTime(0.0001, now);
+    ringGain.gain.exponentialRampToValueAtTime(0.32, now + 0.02);
+    ringGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+
+    const ringFilter = this.ctx.createBiquadFilter();
+    ringFilter.type = 'bandpass';
+    ringFilter.frequency.setValueAtTime(750, now);
+    ringFilter.Q.setValueAtTime(10, now);
+
+    ringOsc.connect(ringGain);
+    ringGain.connect(ringFilter);
+    ringFilter.connect(out);
+    ringOsc.start(now);
+    ringOsc.stop(now + 0.26);
+
+    const dingStart = now + 0.03;
+    const dingOsc = this.ctx.createOscillator();
+    dingOsc.type = 'sine';
+    dingOsc.frequency.setValueAtTime(200, dingStart);
+    dingOsc.frequency.exponentialRampToValueAtTime(120, dingStart + 0.18);
+
+    const dingGain = this.ctx.createGain();
+    dingGain.gain.setValueAtTime(0.0001, dingStart);
+    dingGain.gain.exponentialRampToValueAtTime(0.42, dingStart + 0.02);
+    dingGain.gain.exponentialRampToValueAtTime(0.0001, dingStart + 0.18);
+
+    dingOsc.connect(dingGain);
+    dingGain.connect(out);
+    dingOsc.start(dingStart);
+    dingOsc.stop(dingStart + 0.19);
+
+    const overtoneOsc = this.ctx.createOscillator();
+    overtoneOsc.type = 'sine';
+    overtoneOsc.frequency.setValueAtTime(400, dingStart);
+    overtoneOsc.frequency.exponentialRampToValueAtTime(240, dingStart + 0.16);
+
+    const overtoneGain = this.ctx.createGain();
+    overtoneGain.gain.setValueAtTime(0.0001, dingStart);
+    overtoneGain.gain.exponentialRampToValueAtTime(0.18, dingStart + 0.02);
+    overtoneGain.gain.exponentialRampToValueAtTime(0.0001, dingStart + 0.16);
+
+    overtoneOsc.connect(overtoneGain);
+    overtoneGain.connect(out);
+    overtoneOsc.start(dingStart);
+    overtoneOsc.stop(dingStart + 0.17);
   }
 
   playClick() {

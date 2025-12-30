@@ -85,6 +85,55 @@ canvas {
   letter-spacing: 0.06em;
 }
 
+.death-title.death-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: 92vw;
+  padding: 0 12px;
+  text-align: center;
+  font-size: clamp(80px, 12vw, 120px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 0.85;
+  color: #ff0000;
+  text-shadow: 0 0 20px #ff0000, 0 0 40px rgba(255, 0, 0, 0.95), 0 0 80px rgba(255, 0, 0, 0.55);
+  transform: translate(-50%, -50%) scale(1);
+  animation: crashPunch 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), crashFade 0.6s ease 2.4s forwards;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes crashPunch {
+  0% {
+    transform: translate(-50%, -50%) scale(0) translateX(0);
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.06) translateX(0);
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1) translateX(-3px);
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(1) translateX(3px);
+  }
+  90% {
+    transform: translate(-50%, -50%) scale(1) translateX(-2px);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) translateX(0);
+  }
+}
+
+@keyframes crashFade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 .death-reason {
   font-size: 18px;
   color: rgba(255, 255, 255, 0.85);
@@ -170,6 +219,15 @@ button.primary {
 .touch-btn:active {
   background: rgba(49, 255, 150, 0.3);
   transform: scale(0.95);
+}
+
+.crash-flash {
+  position: absolute;
+  inset: 0;
+  background: #ff0000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9;
 }
 
 .fade {
