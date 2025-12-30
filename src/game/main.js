@@ -7,12 +7,6 @@ import { checkWallCollision } from './collision.js';
 import { UI } from './ui.js';
 import { FollowCamera } from './camera.js';
 import { AudioManager } from './audio.js';
-<<<<<<< HEAD
-import { commercialBreak, gameplayStart, gameplayStop } from './poki.js';
-
-const app = document.getElementById('app');
-
-=======
 import { gameplayStart, gameplayStop, showInterstitialAd, showRewardedAd, adAnalytics } from './adSystem.js';
 
 const app = document.getElementById('app');
@@ -20,19 +14,14 @@ const app = document.getElementById('app');
 // Mobile detection for performance optimizations
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
 const renderer = new THREE.WebGLRenderer({
   antialias: false,
   alpha: false,
   powerPreference: 'high-performance',
 });
-<<<<<<< HEAD
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-=======
 
 // Adjust pixel ratio for mobile vs desktop
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x05060a, 1);
 
@@ -90,8 +79,6 @@ const ui = new UI({
     pointerSteerT = 0.14;
     hintT = 0;
   },
-<<<<<<< HEAD
-=======
   onRewardedAd: async (rewardType) => {
     // Handler for rewarded ads
     if (mode !== 'crashed') return;
@@ -103,32 +90,24 @@ const ui = new UI({
       applyReward(rewardType);
     }
   },
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
 });
 ui.setBest(best);
 
 function getSteer() {
   const touch = ui.getSteerInput();
-
+  
   const left = keys.left || touch.left;
   const right = keys.right || touch.right;
-
+  
   let steer = 0;
   if (left && !right) steer = -1;
   if (right && !left) steer = 1;
-
+  
   if (pointerSteerT > 0) steer = pointerSteer;
-
+  
   return steer;
 }
 
-<<<<<<< HEAD
-function currentSpeed() {
-  const d = difficulty01(distance, CONFIG.difficulty.maxDistance);
-  // Eased to make the first few seconds readable, then ramp fast.
-  const t = Math.pow(d, 0.72);
-  return lerp(CONFIG.car.baseSpeed, CONFIG.car.maxSpeed, t);
-=======
 function getContextualDeathMessage() {
   const elapsedTime = distance / currentSpeed(); // Approximate time survived
   const lastSteerTime = ui.getLastSteerTime(); // Need to add this to UI class
@@ -161,37 +140,28 @@ function currentSpeed() {
     CONFIG.difficulty.speed.baseSpeed + speedIncrement,
     CONFIG.difficulty.speed.maxSpeed
   );
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
 }
 
 function crash() {
   if (mode !== 'playing') return;
-
+  
   mode = 'crashed';
   freezeT = CONFIG.crash.freezeSeconds;
   showDeathAfterFreeze = true;
   hintT = 0;
-
+  
   deaths += 1;
   localStorage.setItem('owt_deaths', String(deaths));
-
+  
   audio.playCrash();
   followCamera.startCrashShake();
-<<<<<<< HEAD
-=======
   
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
   gameplayStop();
 }
 
 function restart() {
   if (mode === 'playing') return;
-
-<<<<<<< HEAD
-  // Poki hook (do not await: restart must stay instant).
-  if (deaths > 0 && deaths % 3 === 0) commercialBreak();
-
-=======
+  
   // Show interstitial ad every 2-3 deaths (not on immediate restart after ad)
   if (deaths > 0 && deaths % 2 === 0) {
     // Use async function for ad display
@@ -202,36 +172,33 @@ function restart() {
     })();
     return;
   }
-
+  
   completeRestart();
 }
 
 function completeRestart() {
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
   audio.playClick();
-
+  
   mode = 'playing';
   freezeT = 0;
   showDeathAfterFreeze = false;
   distance = 0;
   hintT = 3.5;
-
+  
   keys.left = false;
   keys.right = false;
   pointerSteer = 0;
   pointerSteerT = 0;
-
+  
   car.reset();
   world.reset();
-
+  
   ui.hideDeath();
   ui.setDistance(0);
-
+  
   gameplayStart();
 }
 
-<<<<<<< HEAD
-=======
 function applyReward(rewardType) {
   console.log(`🎉 Aplicando recompensa: ${rewardType}`);
   
@@ -260,17 +227,16 @@ function applyReward(rewardType) {
   }
 }
 
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
 function startRun() {
   mode = 'playing';
   freezeT = 0;
   showDeathAfterFreeze = false;
   distance = 0;
   hintT = 3.5;
-
+  
   car.reset();
   world.reset();
-
+  
   ui.hideDeath();
   ui.setBest(best);
   ui.setDistance(0);
@@ -290,22 +256,16 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
     keys.left = true;
     hintT = 0;
-<<<<<<< HEAD
-=======
     ui.updateSteerTime(); // Track steer time for contextual messages
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
     e.preventDefault();
   }
   if (e.code === 'ArrowRight' || e.code === 'KeyD') {
     keys.right = true;
     hintT = 0;
-<<<<<<< HEAD
-=======
     ui.updateSteerTime(); // Track steer time for contextual messages
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
     e.preventDefault();
   }
-
+  
   if ((e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyR') && mode === 'crashed') {
     restart();
     e.preventDefault();
@@ -333,36 +293,33 @@ renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
 function frame(ts) {
   requestAnimationFrame(frame);
-
+  
   const dtRaw = Math.min(0.05, (ts - lastTs) / 1000);
   lastTs = ts;
-
+  
   if (pointerSteerT > 0) {
     pointerSteerT = Math.max(0, pointerSteerT - dtRaw);
     if (pointerSteerT === 0) pointerSteer = 0;
   }
-
+  
   if (hintT > 0) {
     hintT = Math.max(0, hintT - dtRaw);
     ui.setHintVisible(true);
   } else {
     ui.setHintVisible(false);
   }
-
+  
   let simDt = dtRaw;
   if (mode === 'crashed' && freezeT > 0) {
     freezeT = Math.max(0, freezeT - dtRaw);
     simDt = 0;
-
+  
     if (freezeT === 0 && showDeathAfterFreeze) {
       showDeathAfterFreeze = false;
-<<<<<<< HEAD
-      ui.showDeath(pickRandom(DEATH_MESSAGES));
-=======
+      
       // Use contextual death messages based on crash circumstances
       ui.showDeath(getContextualDeathMessage());
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
-
+      
       if (distance > best) {
         best = distance;
         localStorage.setItem('owt_best', String(best));
@@ -370,30 +327,26 @@ function frame(ts) {
       }
     }
   }
-
+  
   if (mode === 'playing') {
     const speed = currentSpeed();
     const steer = getSteer();
-
+  
     car.update(simDt, steer, speed);
     distance = car.group.position.z;
-
+  
     world.update(distance);
-
+  
     const road = world.sampleRoad(distance);
     if (checkWallCollision(car, road)) crash();
-
+  
     ui.setDistance(distance);
   }
-
+  
   followCamera.update(dtRaw, car.group);
   renderer.render(scene, camera);
 }
 
-<<<<<<< HEAD
-startRun();
-requestAnimationFrame(frame);
-=======
 // Performance monitoring
 let frameCount = 0;
 let lastPerfTime = performance.now();
@@ -432,4 +385,3 @@ window.gameDebug = {
 
 console.log('🎮 One Wrong Turn - Pulido, Optimizado y Listo para Poki');
 console.log('📊 Disponibles herramientas de depuración: gameDebug.testRewards(), gameDebug.testInterstitial(), gameDebug.getPerformanceMetrics()');
->>>>>>> b7d7fbace36095314956d6bccb3f3bca53b42b65
