@@ -25,7 +25,7 @@ const renderer = new THREE.WebGLRenderer({
 // Adjust pixel ratio for mobile vs desktop
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x05060a, 1);
+renderer.setClearColor(0x0a0a0f, 1);
 
 renderer.domElement.style.position = 'absolute';
 renderer.domElement.style.inset = '0';
@@ -36,14 +36,55 @@ renderer.domElement.tabIndex = 0;
 app?.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x05060a);
-scene.fog = new THREE.Fog(0x05060a, 12, 180);
+
+// Create aggressive synthwave gradient background
+function createGradientTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#2a0845');    // Purple top
+  gradient.addColorStop(0.5, '#ff6b35');  // Orange middle
+  gradient.addColorStop(1, '#0a0a0f');    // Black bottom
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  return texture;
+}
+
+scene.background = createGradientTexture();
+scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
 
-// Lights kept cheap: one ambient + one directional.
-scene.add(new THREE.AmbientLight(0xffffff, 0.65));
-const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+// Reactive synthwave lighting system
+scene.add(new THREE.AmbientLight(0xffffff, CONFIG.synthwave.lights.ambientIntensity));
+
+// Cyan point light (left side)
+const cyanLight = new THREE.PointLight(
+  CONFIG.synthwave.lights.pointCyan,
+  CONFIG.synthwave.lights.pointCyanIntensity,
+  25
+);
+cyanLight.position.set(-4, 3, 2);
+scene.add(cyanLight);
+
+// Magenta point light (right side)
+const magentaLight = new THREE.PointLight(
+  CONFIG.synthwave.lights.pointMagenta,
+  CONFIG.synthwave.lights.pointMagentaIntensity,
+  25
+);
+magentaLight.position.set(4, 3, 2);
+scene.add(magentaLight);
+
+// Directional sun (for definition)
+const sun = new THREE.DirectionalLight(0xffffff, 0.4);
 sun.position.set(5, 12, -4);
 scene.add(sun);
 
@@ -67,6 +108,7 @@ let distance = 0;
 let best = Number(localStorage.getItem('owt_best') || '0');
 
 let hintT = 4.0;
+let pulseTime = 0;
 
 const keys = {
   left: false,
@@ -258,6 +300,12 @@ function frame(ts) {
   if (mode === 'playing') {
     const { speed, speedRatio } = currentSpeed();
     const steer = getSteer();
+
+    // Update light pulse effect based on speed
+    pulseTime += dtRaw * 3;
+    const pulseFactor = 0.8 + Math.sin(pulseTime) * 0.2;
+    cyanLight.intensity = CONFIG.synthwave.lights.pointCyanIntensity * pulseFactor;
+    magentaLight.intensity = CONFIG.synthwave.lights.pointMagentaIntensity * pulseFactor;
 
     car.update(simDt, steer, speed);
     distance = car.group.position.z;

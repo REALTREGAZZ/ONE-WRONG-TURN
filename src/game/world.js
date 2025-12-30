@@ -98,37 +98,96 @@ export class World {
   _createRoadMeshes() {
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
 
+    // Synthwave dark blue road with glow
     const roadMat = new THREE.MeshStandardMaterial({
-      color: this.config.road.roadColor,
-      roughness: 0.35,
-      metalness: 0.0,
-      emissive: new THREE.Color(0x041512),
-      emissiveIntensity: 0.45,
+      color: this.config.synthwave.road.base,
+      roughness: 0.3,
+      metalness: 0.5,
+      emissive: new THREE.Color(0x0a0a2e),
+      emissiveIntensity: 0.3,
     });
 
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: this.config.road.wallColor,
-      roughness: 0.55,
-      metalness: 0,
+    // Cyan neon wall (left)
+    const leftWallMat = new THREE.MeshStandardMaterial({
+      color: this.config.synthwave.walls.left,
+      emissive: this.config.synthwave.walls.leftEmissive,
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      metalness: 0.8,
+    });
+
+    // Magenta neon wall (right)
+    const rightWallMat = new THREE.MeshStandardMaterial({
+      color: this.config.synthwave.walls.right,
+      emissive: this.config.synthwave.walls.rightEmissive,
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      metalness: 0.8,
     });
 
     this.roadMesh = new THREE.InstancedMesh(unitBox, roadMat, this.segmentCount);
-    this.leftWallMesh = new THREE.InstancedMesh(unitBox, wallMat, this.segmentCount);
-    this.rightWallMesh = new THREE.InstancedMesh(unitBox, wallMat, this.segmentCount);
+    this.leftWallMesh = new THREE.InstancedMesh(unitBox, leftWallMat, this.segmentCount);
+    this.rightWallMesh = new THREE.InstancedMesh(unitBox, rightWallMat, this.segmentCount);
 
     this.roadMesh.frustumCulled = false;
     this.leftWallMesh.frustumCulled = false;
     this.rightWallMesh.frustumCulled = false;
 
     this.scene.add(this.roadMesh, this.leftWallMesh, this.rightWallMesh);
+
+    // Create neon grid lines on the road
+    this._createGridLines();
+  }
+
+  _createGridLines() {
+    // Yellow neon grid lines
+    const gridColor = this.config.synthwave.road.grid;
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: gridColor,
+      transparent: true,
+      opacity: 0.6,
+    });
+
+    // Create horizontal grid lines that span across the road
+    const gridCount = 80;
+    const gridSpacing = 2;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(gridCount * 2 * 3);
+
+    // Initialize grid line positions
+    for (let i = 0; i < gridCount; i++) {
+      const z = i * gridSpacing;
+      const idx = i * 6;
+
+      // Each line goes from left to right across the road
+      positions[idx] = -10;     // x1
+      positions[idx + 1] = -0.1; // y1 (slightly below road surface)
+      positions[idx + 2] = z;   // z1
+
+      positions[idx + 3] = 10;  // x2
+      positions[idx + 4] = -0.1; // y2
+      positions[idx + 5] = z;   // z2
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    this.gridLines = new THREE.LineSegments(geometry, lineMaterial);
+    this.gridLines.frustumCulled = false;
+    this.gridLineCount = gridCount;
+    this.gridSpacing = gridSpacing;
+    this.gridBaseZ = 0;
+
+    this.scene.add(this.gridLines);
   }
 
   _createBuildings() {
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x39a0ff,
-      roughness: 0.75,
-      metalness: 0.05,
+      color: 0xff6b35,
+      roughness: 0.4,
+      metalness: 0.6,
+      emissive: 0xff0000,
+      emissiveIntensity: 0.3,
     });
 
     this.buildingCount = this.segmentCount * 2;
@@ -144,6 +203,7 @@ export class World {
     this.baseZ = 0;
     this.headIndex = 0;
     this.roadGen.reset();
+    this.gridBaseZ = 0;
 
     for (let i = 0; i < this.segmentCount; i += 1) {
       const zStart = this.baseZ + i * this.segLen;
@@ -165,6 +225,27 @@ export class World {
     while (carZ - this.baseZ > recycleBehind) {
       this._recycleOne();
     }
+
+    // Update grid lines to scroll with the road
+    this._updateGridLines(carZ);
+  }
+
+  _updateGridLines(carZ) {
+    // Calculate the offset to make grid lines appear to scroll
+    const gridOffset = (carZ % this.gridSpacing) / this.gridSpacing;
+    const positions = this.gridLines.geometry.attributes.position.array;
+
+    for (let i = 0; i < this.gridLineCount; i++) {
+      const baseZ = i * this.gridSpacing;
+      const effectiveZ = baseZ - carZ + gridOffset * this.gridSpacing;
+      const idx = i * 6;
+
+      positions[idx + 2] = effectiveZ;     // z1
+      positions[idx + 5] = effectiveZ;     // z2
+    }
+
+    this.gridLines.geometry.attributes.position.needsUpdate = true;
+    this.gridLines.position.z = carZ;
   }
 
   _recycleOne() {
@@ -236,8 +317,10 @@ export class World {
     this._tmpMatrix.compose(this._tmpPos, this._tmpQuat.identity(), this._tmpScale);
     this.buildings.setMatrixAt(instanceIndex, this._tmpMatrix);
 
-    const h = (0.55 + Math.random() * 0.45) % 1;
-    this._buildingColor.setHSL(h, 0.72, 0.55);
+    // Synthwave building colors from palette
+    const palette = this.config.synthwave.buildings;
+    const colorIndex = Math.floor(Math.random() * palette.length);
+    this._buildingColor.setHex(palette[colorIndex]);
     this.buildings.setColorAt(instanceIndex, this._buildingColor);
   }
 
