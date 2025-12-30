@@ -1,38 +1,59 @@
 export const CONFIG = {
   // Synthwave/Cyberpunk color palette
   synthwave: {
-    background: {
-      top: 0x2a0845,    // Purple
-      middle: 0xff6b35,  // Orange
-      bottom: 0x0a0a0f,  // Black
-    },
-    fog: 0x1a1a2e,       // Deep purple-blue
-    walls: {
-      left: 0x00ffff,    // Cyan
-      leftEmissive: 0x00ffff,
-      right: 0xff00ff,   // Magenta
-      rightEmissive: 0xff00ff,
-    },
-    road: {
-      base: 0x1a1a3e,    // Dark blue
-      grid: 0xffff00,    // Yellow neon
-    },
+    // Colores del coche
     car: {
-      color: 0xffff00,   // Yellow neon
+      color: 0xffff00, // Amarillo neón
       emissive: 0xffff00,
+      emissiveIntensity: 0.6,
     },
-    buildings: [
-      0xff6b35,  // Orange
-      0xff1493,  // Deep magenta
-      0x8b00ff,  // Purple
-      0xff4500,  // Red-orange
-    ],
+    // Colores de muros
+    walls: {
+      left: {
+        color: 0x00ffff, // Cyan
+        emissive: 0x00ffff,
+        emissiveIntensity: 0.8,
+      },
+      right: {
+        color: 0xff00ff, // Magenta
+        emissive: 0xff00ff,
+        emissiveIntensity: 0.8,
+      },
+    },
+    // Carretera y grid
+    road: {
+      color: 0x1a1a3e, // Azul oscuro
+      gridColor: 0xffff00, // Amarillo neón
+    },
+    // Edificios/obstacles
+    buildings: {
+      color1: 0xff6b35, // Naranja
+      color2: 0xff1493, // Magenta fuerte
+      emissiveIntensity: 0.5,
+    },
+    // Cielo
+    sky: {
+      topColor: 0x2a0845, // Púrpura
+      middleColor: 0xff6b35, // Naranja
+      bottomColor: 0x0a0a0f, // Negro
+    },
+    // Fog
+    fog: 0x1a1a2e, // Deep purple-blue
+    // Luces
     lights: {
-      ambientIntensity: 0.8,
-      pointCyan: 0x00ffff,
-      pointCyanIntensity: 0.6,
-      pointMagenta: 0xff00ff,
-      pointMagentaIntensity: 0.6,
+      ambient: { intensity: 0.8 },
+      pointLights: {
+        cyan: {
+          color: 0x00ffff,
+          intensity: 0.6,
+          distance: 50,
+        },
+        magenta: {
+          color: 0xff00ff,
+          intensity: 0.6,
+          distance: 50,
+        },
+      },
     },
   },
   difficulty: {

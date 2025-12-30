@@ -3,15 +3,16 @@ import { clamp } from './helpers.js';
 
 export class Car {
   constructor(config) {
-    this.config = config;
+    this.rootConfig = config;
+    this.config = config.car;
 
     this.group = new THREE.Group();
 
-    const bodyGeo = new THREE.BoxGeometry(config.length, config.height, config.width);
+    const bodyGeo = new THREE.BoxGeometry(this.config.length, this.config.height, this.config.width);
     const bodyMat = new THREE.MeshStandardMaterial({
       color: config.synthwave.car.color,
       emissive: config.synthwave.car.emissive,
-      emissiveIntensity: 0.4,
+      emissiveIntensity: config.synthwave.car.emissiveIntensity,
       roughness: 0.3,
       metalness: 0.7,
     });
@@ -22,12 +23,12 @@ export class Car {
     this.group.add(this.body);
 
     this.yaw = 0;
-    this.speed = config.baseSpeed;
+    this.speed = this.config.baseSpeed;
 
-    this.group.position.set(0, config.height * 0.5 + 0.05, 0);
+    this.group.position.set(0, this.config.height * 0.5 + 0.05, 0);
 
     // Used for wall collision margin.
-    this.radius = config.width * 0.45;
+    this.radius = this.config.width * 0.45;
   }
 
   reset() {
