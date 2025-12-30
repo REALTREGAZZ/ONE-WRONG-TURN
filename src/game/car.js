@@ -9,9 +9,11 @@ export class Car {
 
     const bodyGeo = new THREE.BoxGeometry(config.length, config.height, config.width);
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0xff2d8c,
-      roughness: 0.55,
-      metalness: 0.1,
+      color: config.synthwave.car.color,
+      emissive: config.synthwave.car.emissive,
+      emissiveIntensity: 0.4,
+      roughness: 0.3,
+      metalness: 0.7,
     });
 
     this.body = new THREE.Mesh(bodyGeo, bodyMat);

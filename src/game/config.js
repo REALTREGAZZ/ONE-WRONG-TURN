@@ -1,4 +1,40 @@
 export const CONFIG = {
+  // Synthwave/Cyberpunk color palette
+  synthwave: {
+    background: {
+      top: 0x2a0845,    // Purple
+      middle: 0xff6b35,  // Orange
+      bottom: 0x0a0a0f,  // Black
+    },
+    fog: 0x1a1a2e,       // Deep purple-blue
+    walls: {
+      left: 0x00ffff,    // Cyan
+      leftEmissive: 0x00ffff,
+      right: 0xff00ff,   // Magenta
+      rightEmissive: 0xff00ff,
+    },
+    road: {
+      base: 0x1a1a3e,    // Dark blue
+      grid: 0xffff00,    // Yellow neon
+    },
+    car: {
+      color: 0xffff00,   // Yellow neon
+      emissive: 0xffff00,
+    },
+    buildings: [
+      0xff6b35,  // Orange
+      0xff1493,  // Deep magenta
+      0x8b00ff,  // Purple
+      0xff4500,  // Red-orange
+    ],
+    lights: {
+      ambientIntensity: 0.8,
+      pointCyan: 0x00ffff,
+      pointCyanIntensity: 0.6,
+      pointMagenta: 0xff00ff,
+      pointMagentaIntensity: 0.6,
+    },
+  },
   difficulty: {
     // Moderate speed curve for balanced gameplay
     maxDistance: 800,
@@ -30,8 +66,8 @@ export const CONFIG = {
     visibleSegments: 150, // Reduced for performance
 
     groundWidth: 70,
-    groundColor: 0x0b0d17,
-    roadColor: 0x19ffd1,
+    groundColor: 0x0a0a0f,
+    roadColor: 0x1a1a3e,
     wallColor: 0xffffff,
   },
   turns: {
@@ -72,14 +108,14 @@ export const CONFIG = {
     particlesPerSecondAtMaxSpeed: 80,
     particleSize: { width: 0.08, length: 3 },
     lifespan: 0.4,
-    color: 0x00ffff,
+    color: 0xff00ff,  // Magenta speed lines
   },
   sparks: {
     enabled: true,
     particlesPerGraze: 8,
     lifespan: 0.2,
     size: 0.08,
-    color: 0xff6600,
+    color: 0xffff00,  // Yellow neon sparks
     grazeThreshold: 0.15, // How close to wall before emitting sparks
     speed: 8, // Particle explosion speed
   },
