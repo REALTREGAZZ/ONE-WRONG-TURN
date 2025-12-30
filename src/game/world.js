@@ -100,7 +100,7 @@ export class World {
 
     // Synthwave dark blue road with glow
     const roadMat = new THREE.MeshStandardMaterial({
-      color: this.config.synthwave.road.base,
+      color: this.config.synthwave.road.color,
       roughness: 0.3,
       metalness: 0.5,
       emissive: new THREE.Color(0x0a0a2e),
@@ -109,18 +109,18 @@ export class World {
 
     // Cyan neon wall (left)
     const leftWallMat = new THREE.MeshStandardMaterial({
-      color: this.config.synthwave.walls.left,
-      emissive: this.config.synthwave.walls.leftEmissive,
-      emissiveIntensity: 0.8,
+      color: this.config.synthwave.walls.left.color,
+      emissive: this.config.synthwave.walls.left.emissive,
+      emissiveIntensity: this.config.synthwave.walls.left.emissiveIntensity,
       roughness: 0.2,
       metalness: 0.8,
     });
 
     // Magenta neon wall (right)
     const rightWallMat = new THREE.MeshStandardMaterial({
-      color: this.config.synthwave.walls.right,
-      emissive: this.config.synthwave.walls.rightEmissive,
-      emissiveIntensity: 0.8,
+      color: this.config.synthwave.walls.right.color,
+      emissive: this.config.synthwave.walls.right.emissive,
+      emissiveIntensity: this.config.synthwave.walls.right.emissiveIntensity,
       roughness: 0.2,
       metalness: 0.8,
     });
@@ -141,7 +141,7 @@ export class World {
 
   _createGridLines() {
     // Yellow neon grid lines
-    const gridColor = this.config.synthwave.road.grid;
+    const gridColor = this.config.synthwave.road.gridColor;
     const lineMaterial = new THREE.LineBasicMaterial({
       color: gridColor,
       transparent: true,
@@ -182,13 +182,18 @@ export class World {
 
   _createBuildings() {
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
+    const cfg = this.config.synthwave.buildings;
+
     const mat = new THREE.MeshStandardMaterial({
-      color: 0xff6b35,
+      color: cfg.color1,
       roughness: 0.4,
       metalness: 0.6,
-      emissive: 0xff0000,
-      emissiveIntensity: 0.3,
+      emissive: cfg.color1,
+      emissiveIntensity: cfg.emissiveIntensity,
+      vertexColors: true,
     });
+
+    this._buildingPalette = [cfg.color1, cfg.color2];
 
     this.buildingCount = this.segmentCount * 2;
     this.buildings = new THREE.InstancedMesh(unitBox, mat, this.buildingCount);
@@ -318,7 +323,7 @@ export class World {
     this.buildings.setMatrixAt(instanceIndex, this._tmpMatrix);
 
     // Synthwave building colors from palette
-    const palette = this.config.synthwave.buildings;
+    const palette = this._buildingPalette;
     const colorIndex = Math.floor(Math.random() * palette.length);
     this._buildingColor.setHex(palette[colorIndex]);
     this.buildings.setColorAt(instanceIndex, this._buildingColor);

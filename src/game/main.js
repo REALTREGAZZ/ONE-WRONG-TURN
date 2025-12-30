@@ -44,10 +44,13 @@ function createGradientTexture() {
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
+  const toCssHex = (hex) => `#${hex.toString(16).padStart(6, '0')}`;
+  const { topColor, middleColor, bottomColor } = CONFIG.synthwave.sky;
+
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#2a0845');    // Purple top
-  gradient.addColorStop(0.5, '#ff6b35');  // Orange middle
-  gradient.addColorStop(1, '#0a0a0f');    // Black bottom
+  gradient.addColorStop(0, toCssHex(topColor));
+  gradient.addColorStop(0.5, toCssHex(middleColor));
+  gradient.addColorStop(1, toCssHex(bottomColor));
 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -63,23 +66,17 @@ scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
 
 // Reactive synthwave lighting system
-scene.add(new THREE.AmbientLight(0xffffff, CONFIG.synthwave.lights.ambientIntensity));
+scene.add(new THREE.AmbientLight(0xffffff, CONFIG.synthwave.lights.ambient.intensity));
 
 // Cyan point light (left side)
-const cyanLight = new THREE.PointLight(
-  CONFIG.synthwave.lights.pointCyan,
-  CONFIG.synthwave.lights.pointCyanIntensity,
-  25
-);
+const cyanCfg = CONFIG.synthwave.lights.pointLights.cyan;
+const cyanLight = new THREE.PointLight(cyanCfg.color, cyanCfg.intensity, cyanCfg.distance);
 cyanLight.position.set(-4, 3, 2);
 scene.add(cyanLight);
 
 // Magenta point light (right side)
-const magentaLight = new THREE.PointLight(
-  CONFIG.synthwave.lights.pointMagenta,
-  CONFIG.synthwave.lights.pointMagentaIntensity,
-  25
-);
+const magentaCfg = CONFIG.synthwave.lights.pointLights.magenta;
+const magentaLight = new THREE.PointLight(magentaCfg.color, magentaCfg.intensity, magentaCfg.distance);
 magentaLight.position.set(4, 3, 2);
 scene.add(magentaLight);
 
@@ -91,7 +88,7 @@ scene.add(sun);
 const audio = new AudioManager();
 
 const world = new World(scene, CONFIG);
-const car = new Car(CONFIG.car);
+const car = new Car(CONFIG);
 scene.add(car.group);
 
 const followCamera = new FollowCamera(camera, CONFIG.camera);
@@ -304,8 +301,8 @@ function frame(ts) {
     // Update light pulse effect based on speed
     pulseTime += dtRaw * 3;
     const pulseFactor = 0.8 + Math.sin(pulseTime) * 0.2;
-    cyanLight.intensity = CONFIG.synthwave.lights.pointCyanIntensity * pulseFactor;
-    magentaLight.intensity = CONFIG.synthwave.lights.pointMagentaIntensity * pulseFactor;
+    cyanLight.intensity = cyanCfg.intensity * pulseFactor;
+    magentaLight.intensity = magentaCfg.intensity * pulseFactor;
 
     car.update(simDt, steer, speed);
     distance = car.group.position.z;
