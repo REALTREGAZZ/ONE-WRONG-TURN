@@ -87,7 +87,7 @@ export const CONFIG = {
   },
   road: {
     baseWidth: 5.2,
-    minWidth: 2.6, // Narrower final width for difficulty spike
+    minWidth: 4.0,  // Minimum width where narrowing stops (leaves 1.0 margin per side for car width 2.0)
 
     wallThickness: 0.35,
     wallHeight: 1.25,
