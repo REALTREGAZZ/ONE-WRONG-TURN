@@ -10,6 +10,7 @@ import { AudioManager } from './audio.js';
 import { gameplayStart, gameplayStop, showInterstitialAd } from './adSystem.js';
 import { SpeedLines } from './speedLines.js';
 import { Sparks } from './sparks.js';
+import { CrashDebris } from './crashDebris.js';
 
 const app = document.getElementById('app');
 
@@ -94,6 +95,9 @@ scene.add(car.group);
 const followCamera = new FollowCamera(camera, CONFIG.camera);
 const speedLines = new SpeedLines(scene, CONFIG.speedLines);
 const sparks = new Sparks(scene, CONFIG.sparks);
+const crashDebris = new CrashDebris(scene, {
+  colors: [CONFIG.synthwave.walls.left.color, CONFIG.synthwave.walls.right.color, CONFIG.synthwave.car.color],
+});
 
 let lastTs = performance.now();
 let lastGrazeTime = 0;
@@ -125,6 +129,22 @@ const ui = new UI({
   },
 });
 ui.setBest(best);
+
+const crashFlashEl = document.getElementById('crash-flash');
+let crashFlashTimer = 0;
+
+function crashFlash() {
+  if (!crashFlashEl) return;
+  window.clearTimeout(crashFlashTimer);
+
+  crashFlashEl.style.transition = 'opacity 0.1s linear';
+  crashFlashEl.style.opacity = '0.6';
+
+  crashFlashTimer = window.setTimeout(() => {
+    crashFlashEl.style.transition = 'opacity 0.6s ease-out';
+    crashFlashEl.style.opacity = '0';
+  }, 100);
+}
 
 function getSteer() {
   const touch = ui.getSteerInput();
@@ -163,6 +183,8 @@ function crash() {
   
   audio.playCrash();
   followCamera.startCrashShake();
+  crashFlash();
+  crashDebris.spawn(car.group.position, camera.position);
   
   gameplayStop();
 }
@@ -191,6 +213,9 @@ function completeRestart() {
   world.reset();
   speedLines.reset();
   sparks.reset();
+  crashDebris.reset();
+
+  if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
   ui.hideDeath();
   ui.setDistance(0);
@@ -210,6 +235,9 @@ function startRun() {
   world.reset();
   speedLines.reset();
   sparks.reset();
+  crashDebris.reset();
+
+  if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
   ui.hideDeath();
   ui.setBest(best);
@@ -334,6 +362,8 @@ function frame(ts) {
     followCamera.update(dtRaw, car.group, 0);
     sparks.update(simDt);
   }
+
+  crashDebris.update(dtRaw);
 
   renderer.render(scene, camera);
 }

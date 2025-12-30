@@ -153,9 +153,12 @@ export const CONFIG = {
 };
 
 export const DEATH_MESSAGES = [
-  'You turned too late.', // Si fue frontal (default)
-  'Too greedy.', // Si duró mucho tiempo
-  'You hesitated.', // Si chocó rápido
-  'Almost.', // Si fue por pared
-  'That was on you.', // Fallback
+  'TOO GREEDY',
+  'OVERCONFIDENT',
+  'OUCH!',
+  'CRASHED!',
+  'GAME OVER',
+  'YOU SUCK',
+  'UNLUCKY',
+  'BETTER LUCK NEXT TIME',
 ];

@@ -10,6 +10,7 @@ export class UI {
     this.elBest = document.getElementById('best');
 
     this.elCenterMessage = document.getElementById('center-message');
+    this.elDeathTitle = document.getElementById('death-title');
     this.elDeathReason = document.getElementById('death-reason');
     this.elRestart = document.getElementById('restart');
     this.elHint = document.getElementById('hint');
@@ -95,12 +96,26 @@ export class UI {
 
   showDeath(reason = pickRandom(DEATH_MESSAGES)) {
     this.mode = 'crashed';
-    this.elDeathReason.textContent = reason;
+
+    if (this.elDeathTitle) {
+      this.elDeathTitle.textContent = reason;
+      this.elDeathTitle.classList.remove('death-message');
+      void this.elDeathTitle.offsetWidth;
+      this.elDeathTitle.classList.add('death-message');
+    }
+
+    this.elDeathReason.textContent = 'TAP / ENTER TO RETRY';
     this.elCenterMessage.classList.remove('hidden');
   }
 
   hideDeath() {
     this.elCenterMessage.classList.add('hidden');
+
+    if (this.elDeathTitle) {
+      this.elDeathTitle.classList.remove('death-message');
+      this.elDeathTitle.textContent = 'CRASH';
+    }
+
     this.mode = 'playing';
   }
 }
