@@ -2,9 +2,9 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 import { lerp } from './helpers.js';
 
 export class FollowCamera {
-  constructor(camera, { height, distance, lookAhead, smoothness, crashShakeSeconds, crashShakeStrength, fov }) {
+  constructor(camera, { height, distance, lookAhead, smoothness, crashShakeSeconds, crashShakeStrength, fov, shakeFrequency, shakeAmplitude }) {
     this.camera = camera;
-    this.params = { height, distance, lookAhead, smoothness, crashShakeSeconds, crashShakeStrength, fov };
+    this.params = { height, distance, lookAhead, smoothness, crashShakeSeconds, crashShakeStrength, fov, shakeFrequency, shakeAmplitude };
 
     this._shakeT = 0;
     this._shakeTotal = 0;
@@ -13,6 +13,7 @@ export class FollowCamera {
 
     this._shakeOffset = new THREE.Vector3();
     this._lastShake = new THREE.Vector3();
+    this._lastVelocityShake = new THREE.Vector3();
 
     this._tmp = new THREE.Vector3();
     this._desired = new THREE.Vector3();
@@ -25,6 +26,21 @@ export class FollowCamera {
     this._shakeSampleT = 0;
     this._shakeOffset.set(0, 0, 0);
     this._lastShake.set(0, 0, 0);
+  }
+
+  updateVelocityShake(dt, speed, maxSpeed) {
+    this.camera.position.sub(this._lastVelocityShake);
+    this._lastVelocityShake.set(0, 0, 0);
+
+    const velocityRatio = speed / maxSpeed;
+    if (velocityRatio > 0.6) {
+      const amplitude = velocityRatio * (this.params.shakeAmplitude || 0.04);
+      const frequency = this.params.shakeFrequency || 10;
+      const noise = Math.sin(Date.now() * 0.01 * frequency) * amplitude;
+
+      this._lastVelocityShake.set(noise, noise * 0.3, 0);
+      this.camera.position.add(this._lastVelocityShake);
+    }
   }
 
   update(dt, target, speedRatio = 0) {

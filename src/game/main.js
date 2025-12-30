@@ -10,6 +10,7 @@ import { AudioManager } from './audio.js';
 import { gameplayStart, gameplayStop, showInterstitialAd } from './adSystem.js';
 import { SpeedLines } from './speedLines.js';
 import { Sparks } from './sparks.js';
+import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
 
 const app = document.getElementById('app');
@@ -95,6 +96,7 @@ scene.add(car.group);
 const followCamera = new FollowCamera(camera, CONFIG.camera);
 const speedLines = new SpeedLines(scene, CONFIG.speedLines);
 const sparks = new Sparks(scene, CONFIG.sparks);
+const wheelTrails = new WheelTrails(scene, CONFIG.wheelTrails);
 const crashDebris = new CrashDebris(scene, {
   colors: [CONFIG.synthwave.walls.left.color, CONFIG.synthwave.walls.right.color, CONFIG.synthwave.car.color],
 });
@@ -211,6 +213,7 @@ function completeRestart() {
 
   car.reset();
   world.reset();
+  wheelTrails.reset();
   speedLines.reset();
   sparks.reset();
   crashDebris.reset();
@@ -233,6 +236,7 @@ function startRun() {
 
   car.reset();
   world.reset();
+  wheelTrails.reset();
   speedLines.reset();
   sparks.reset();
   crashDebris.reset();
@@ -353,13 +357,16 @@ function frame(ts) {
 
     ui.setDistance(distance);
 
+    wheelTrails.update(simDt, car, speed, CONFIG.difficulty.speed.maxSpeed);
     speedLines.emit(speedRatio);
     speedLines.update(simDt, speedRatio);
     sparks.update(simDt);
 
+    followCamera.updateVelocityShake(dtRaw, speed, CONFIG.difficulty.speed.maxSpeed);
     followCamera.update(dtRaw, car.group, speedRatio);
   } else {
     followCamera.update(dtRaw, car.group, 0);
+    wheelTrails.update(simDt, car, 0, CONFIG.difficulty.speed.maxSpeed);
     sparks.update(simDt);
   }
 
