@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { clamp } from './helpers.js';
+import { clamp, lerp } from './helpers.js';
 
 export class Car {
   constructor(config) {
@@ -56,6 +56,9 @@ export class Car {
     this.group.position.z += dz;
 
     this.group.rotation.y = this.yaw;
-    this.group.rotation.z = -this.yaw * 0.35;
+
+    // Z-Axis tilt based on steering input
+    const targetTiltZ = steer * THREE.MathUtils.degToRad(this.config.tiltAngle || 18);
+    this.group.rotation.z = lerp(this.group.rotation.z, targetTiltZ, 0.15);
   }
 }

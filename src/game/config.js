@@ -75,6 +75,15 @@ export const CONFIG = {
     steeringRate: 2.0, // Controlled steering
     maxYaw: Math.PI * 0.25, // Bounded maximum turn
     autoCenterRate: 7.5,
+    tiltAngle: 18, // Max tilt in degrees
+  },
+  wheelTrails: {
+    enabled: true,
+    lifespan: 0.25,
+    width: 0.1,
+    leftColor: 0x00ffff,
+    rightColor: 0xff00ff,
+    maxDensity: 20,
   },
   road: {
     baseWidth: 5.2,
@@ -115,9 +124,11 @@ export const CONFIG = {
     height: 4.2,
     distance: 6.8,
     lookAhead: 9,
-    smoothness: 12, // Smoother camera for polish
+    smoothness: 8, // Adjusted for better "lag" and "escape" feel
     crashShakeSeconds: 0.2, // Exact 0.2s as specified
     crashShakeStrength: 0.4, // Punchier shake
+    shakeFrequency: 10,
+    shakeAmplitude: 0.04,
     fov: {
       base: 62,
       max: 77,
