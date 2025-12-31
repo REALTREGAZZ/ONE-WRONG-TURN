@@ -204,12 +204,11 @@ function createShopItem(item, type) {
     if (isOwned) {
       if (type === 'skin') {
         shopSystem.applySkin(item.id);
-        car.applySkinWithModel(item.id);
+        car.applySkin(item.id);
       } else {
         shopSystem.toggleAccessory(item.id);
-        // Re-apply all active accessories
         const activeAccessories = shopSystem.selectedAccessories || [];
-        car.applyAccessoriesWithModels(activeAccessories);
+        car.applyAccessories(activeAccessories);
       }
       renderShop();
     } else {
@@ -325,8 +324,8 @@ function completeRestart() {
   // APLICAR SKIN Y ACCESORIOS
   const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
   const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkinWithModel(selectedSkin);
-  car.applyAccessoriesWithModels(selectedAccessories);
+  car.applySkin(selectedSkin);
+  car.applyAccessories(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -354,8 +353,8 @@ function startRun() {
   // APLICAR SKIN Y ACCESORIOS
   const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
   const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkinWithModel(selectedSkin);
-  car.applyAccessoriesWithModels(selectedAccessories);
+  car.applySkin(selectedSkin);
+  car.applyAccessories(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -572,8 +571,8 @@ function frame(ts) {
 }
 
 // Aplicar skin inicial
-car.applySkinWithModel(shopSystem.selectedSkin);
-car.applyAccessoriesWithModels(shopSystem.selectedAccessories);
+car.applySkin(shopSystem.selectedSkin);
+car.applyAccessories(shopSystem.selectedAccessories);
 
 // Iniciar con el menú
 showMenu();
