@@ -5,129 +5,199 @@ export class RampSystem {
   constructor(scene) {
     this.scene = scene;
     this.ramps = [];
-    this.activeRamp = null;
+    this.nextRampDistance = 250;
+    this.isInAir = false;
+    this.airTime = 0;
+    this.verticalVelocity = 0;
     this.multiplierActive = false;
     this.multiplierValue = 1;
     this.multiplierEndTime = 0;
-    this.lastRampDistance = 0;
   }
   
-  createRamp(distance, roadX) {
-    // Crear rampa aleatoriamente cada X distancia
-    const rampGeo = new THREE.BoxGeometry(4.0, 0.5, 1.5);
+  createRamp(distance, roadWidth, centerX) {
+    // Rampa en MITAD del camino (centered on road)
+    const rampWidth = roadWidth - 0.5; // Ligeramente más estrecha que el camino
+    const rampGeo = new THREE.BoxGeometry(rampWidth, 0.3, 2.0);
     const rampMat = new THREE.MeshStandardMaterial({
       color: 0xff6b35,
       emissive: 0xff6b35,
-      metalness: 0.7
+      metalness: 0.8,
+      roughness: 0.2
     });
     const ramp = new THREE.Mesh(rampGeo, rampMat);
-    ramp.position.set(roadX, 0.3, distance);
-    ramp.rotation.z = 0.3; // Inclinación
-    ramp.collected = false;
+    
+    // Posicionar en el CENTER of the road
+    ramp.position.set(centerX, 0.2, distance);
+    ramp.rotation.z = Math.PI / 8; // 22.5 grados de inclinación
+    ramp.userData = {
+      distance: distance,
+      triggered: false,
+      rampWidth: rampWidth
+    };
     
     this.scene.add(ramp);
-    return {
-      mesh: ramp,
-      distance: distance,
-      collected: false
-    };
+    this.ramps.push(ramp);
+    
+    return ramp;
   }
   
-  checkCollision(carPos, distance) {
-    // Crear rampas aleatoriamente cada 200-300 metros
-    if (!this.lastRampDistance) this.lastRampDistance = 0;
-    const nextRampAt = this.lastRampDistance + 250 + Math.random() * 100;
+  update(carPos, carVelocity, distance, roadWidth, centerX, onRampHit) {
+    // Crear rampas cada 300-400 metros
+    if (distance > this.nextRampDistance) {
+      this.createRamp(distance, roadWidth, centerX);
+      this.nextRampDistance += 300 + Math.random() * 100;
+    }
     
-    if (distance > nextRampAt && distance < nextRampAt + 5) {
-      if (!this.activeRamp) {
-        const roadX = (Math.random() - 0.5) * 2; // Random x position
-        this.activeRamp = this.createRamp(nextRampAt, roadX);
-        this.lastRampDistance = nextRampAt;
+    // Detectar colisión con rampa
+    for (const ramp of this.ramps) {
+      if (!ramp.userData.triggered) {
+        const dist = carPos.distanceTo(ramp.position);
+        
+        // Si el coche toca la rampa
+        if (dist < ramp.userData.rampWidth / 2 + 0.5) {
+          ramp.userData.triggered = true;
+          
+          // Lanzar coche al aire
+          this.isInAir = true;
+          this.airTime = 0;
+          this.verticalVelocity = 15; // Velocidad inicial hacia arriba (m/s)
+          
+          // Callback para pausar juego y mostrar ruleta
+          onRampHit?.();
+          
+          return true;
+        }
       }
     }
     
-    // Detectar si chocaste con la rampa
-    if (this.activeRamp && !this.activeRamp.collected) {
-      const dist = carPos.distanceTo(this.activeRamp.mesh.position);
-      if (dist < 2) {
-        this.activeRamp.collected = true;
-        return { rampHit: true, distance: this.activeRamp.distance };
+    // Actualizar física del aire
+    if (this.isInAir) {
+      this.airTime += 0.016; // ~60fps
+      this.verticalVelocity -= 9.8 * 0.016; // Gravedad (m/s²)
+      
+      // Si vuelve al suelo (Y <= 0.55)
+      if (carPos.y <= 0.55 && this.verticalVelocity < 0) {
+        this.isInAir = false;
+        this.verticalVelocity = 0;
+        this.airTime = 0;
       }
     }
     
-    return null;
+    // Limpiar rampas antiguas
+    this.ramps = this.ramps.filter(r => {
+      if (r.position.z < distance - 50) {
+        this.scene.remove(r);
+        return false;
+      }
+      return true;
+    });
   }
   
-  showMultiplierUI(onSelect) {
-    // Crear UI circular giratoria con multiplicadores
-    const multipliers = [1, 2, 3];
+  getVerticalVelocity() {
+    return this.isInAir ? this.verticalVelocity : 0;
+  }
+  
+  isCarInAir() {
+    return this.isInAir;
+  }
+  
+  showMultiplierWheel(onSelect) {
+    // Crear UI giratoria más atractiva
     const container = document.createElement('div');
     container.id = 'multiplier-wheel';
     container.style.cssText = `
-      position: absolute;
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 300px;
-      height: 300px;
+      width: 320px;
+      height: 320px;
       z-index: 300;
+      pointer-events: auto;
     `;
+    
+    const style = document.createElement('style');
+    if (!document.getElementById('wheel-styles')) {
+      style.id = 'wheel-styles';
+      style.textContent = `
+        @keyframes wheelSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        #multiplier-wheel .wheel {
+          width: 100%;
+          height: 100%;
+          border: 4px solid #ffff00;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(0,255,255,0.2) 0%, rgba(0,0,0,0.8) 100%);
+          animation: wheelSpin 2s linear infinite;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          box-shadow: 0 0 40px #ffff00;
+        }
+        
+        #multiplier-wheel .center {
+          width: 60px;
+          height: 60px;
+          background: #ff00ff;
+          border-radius: 50%;
+          border: 3px solid #ffff00;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          font-weight: 900;
+          color: #ffff00;
+          z-index: 10;
+        }
+        
+        #multiplier-wheel .multiplier-option {
+          position: absolute;
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          border: 3px solid #00ffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 36px;
+          font-weight: 900;
+          color: #ffff00;
+          background: rgba(0,255,255,0.15);
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 0 20px rgba(0,255,255,0.5);
+        }
+        
+        #multiplier-wheel .multiplier-option:hover {
+          background: rgba(0,255,255,0.35);
+          transform: scale(1.15);
+          box-shadow: 0 0 40px rgba(0,255,255,0.8);
+        }
+      `;
+      document.head.appendChild(style);
+    }
     
     const wheel = document.createElement('div');
-    wheel.style.cssText = `
-      width: 100%;
-      height: 100%;
-      border: 3px solid #ffff00;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.8);
-      animation: spin 2s linear infinite;
-      position: relative;
-    `;
+    wheel.className = 'wheel';
     
-    // Agregar CSS animation
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      .multiplier-option {
-        position: absolute;
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        border: 2px solid #00ffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 32px;
-        font-weight: 900;
-        color: #ffff00;
-        background: rgba(0,255,255,0.1);
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-      .multiplier-option:hover {
-        background: rgba(0,255,255,0.3);
-        transform: scale(1.1);
-      }
-    `;
-    document.head.appendChild(style);
+    const multipliers = [1, 2, 3];
     
-    // Posicionar multiplicadores en círculo
+    // Posicionar multiplicadores en círculo (sin rotar con la rueda)
     multipliers.forEach((mult, i) => {
-      const angle = (i / multipliers.length) * Math.PI * 2;
-      const x = Math.cos(angle) * 100 + 150;
-      const y = Math.sin(angle) * 100 + 150;
+      const angle = (i / multipliers.length) * Math.PI * 2 - Math.PI / 2;
+      const radius = 120;
+      const x = Math.cos(angle) * radius + 160;
+      const y = Math.sin(angle) * radius + 160;
       
       const btn = document.createElement('div');
       btn.className = 'multiplier-option';
       btn.textContent = `x${mult}`;
-      btn.style.left = x + 'px';
-      btn.style.top = y + 'px';
+      btn.style.left = (x - 40) + 'px'; // Center the 80px button
+      btn.style.top = (y - 40) + 'px'; // Center the 80px button
       btn.onclick = (e) => {
         e.stopPropagation();
         onSelect(mult);
@@ -136,14 +206,22 @@ export class RampSystem {
       wheel.appendChild(btn);
     });
     
+    // Centro de la rueda
+    const center = document.createElement('div');
+    center.className = 'center';
+    center.textContent = '↓';
+    wheel.appendChild(center);
+    
     container.appendChild(wheel);
     document.getElementById('app').appendChild(container);
     
-    // Auto-desaparecer después de 10 segundos
+    // Auto-seleccionar x1 después de 8 segundos
     setTimeout(() => {
-      if (container.parentNode) container.remove();
-      onSelect(1); // Default x1
-    }, 10000);
+      if (container.parentNode) {
+        container.remove();
+        onSelect(1);
+      }
+    }, 8000);
   }
   
   activateMultiplier(value) {
@@ -152,23 +230,12 @@ export class RampSystem {
     this.multiplierEndTime = Date.now() + (5000 + Math.random() * 5000);
   }
   
-  update(currentTime) {
-    if (this.multiplierActive && currentTime > this.multiplierEndTime) {
+  getMultiplier() {
+    // Check if multiplier has expired
+    if (this.multiplierActive && Date.now() > this.multiplierEndTime) {
       this.multiplierActive = false;
       this.multiplierValue = 1;
     }
-    
-    // Limpiar rampas viejas (muy atrás)
-    this.ramps = this.ramps.filter(r => {
-      if (r.distance < -100) {
-        this.scene.remove(r.mesh);
-        return false;
-      }
-      return true;
-    });
-  }
-  
-  getMultiplier() {
     return this.multiplierActive ? this.multiplierValue : 1;
   }
 }

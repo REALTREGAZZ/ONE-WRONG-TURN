@@ -108,6 +108,7 @@ let lastTs = performance.now();
 let lastGrazeTime = 0;
 const GRAZE_COOLDOWN = 0.08;
 let mode = 'menu'; // 'menu' | 'playing' | 'crashed' | 'shop' | 'stats'
+let isPaused = false;
 let freezeT = 0;
 let showDeathAfterFreeze = false;
 let distance = 0;
@@ -203,12 +204,12 @@ function createShopItem(item, type) {
     if (isOwned) {
       if (type === 'skin') {
         shopSystem.applySkin(item.id);
-        car.applySkin(item.id);
+        car.applySkinWithModel(item.id);
       } else {
         shopSystem.toggleAccessory(item.id);
         // Re-apply all active accessories
         const activeAccessories = shopSystem.selectedAccessories || [];
-        car.applyAccessories(activeAccessories);
+        car.applyAccessoriesWithModels(activeAccessories);
       }
       renderShop();
     } else {
@@ -324,8 +325,8 @@ function completeRestart() {
   // APLICAR SKIN Y ACCESORIOS
   const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
   const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkin(selectedSkin);
-  car.applyAccessories(selectedAccessories);
+  car.applySkinWithModel(selectedSkin);
+  car.applyAccessoriesWithModels(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -353,8 +354,8 @@ function startRun() {
   // APLICAR SKIN Y ACCESORIOS
   const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
   const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkin(selectedSkin);
-  car.applyAccessories(selectedAccessories);
+  car.applySkinWithModel(selectedSkin);
+  car.applyAccessoriesWithModels(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -493,7 +494,7 @@ function frame(ts) {
     }
   }
   
-  if (mode === 'playing') {
+  if (mode === 'playing' && !isPaused) {
     const { speed, speedRatio } = currentSpeed();
     const steer = getSteer();
 
@@ -508,13 +509,29 @@ function frame(ts) {
 
     world.update(distance);
 
-    // Check ramp collisions
-    const rampCheck = rampSystem.checkCollision(car.group.position, distance);
-    if (rampCheck?.rampHit) {
-      rampSystem.showMultiplierUI((selectedMultiplier) => {
-        rampSystem.activateMultiplier(selectedMultiplier);
-        // Efecto visual: velocidad boost, partículas, etc
-      });
+    // ACTUALIZAR RAMPAS Y DETECTAR COLISIÓN
+    const roadInfo = world.sampleRoad(distance);
+    rampSystem.update(
+      car.group.position,
+      speed,
+      distance,
+      roadInfo.width,
+      roadInfo.centerX,
+      () => {
+        isPaused = true;
+        rampSystem.showMultiplierWheel((selectedMult) => {
+          rampSystem.activateMultiplier(selectedMult);
+          isPaused = false;
+        });
+      }
+    );
+
+    // Aplicar gravedad si está en el aire
+    if (rampSystem.isCarInAir()) {
+      const verticalVel = rampSystem.getVerticalVelocity();
+      car.group.position.y += verticalVel * dtRaw;
+    } else {
+      car.group.position.y = 0.55; // Ground level
     }
 
     const road = world.sampleRoad(distance);
@@ -540,7 +557,9 @@ function frame(ts) {
 
     followCamera.updateVelocityShake(dtRaw, speed, CONFIG.difficulty.speed.maxSpeed);
     followCamera.update(dtRaw, car.group, speedRatio);
-    rampSystem.update(Date.now());
+  } else if (mode === 'playing' && isPaused) {
+    // Renderear sin actualizar simulación si está pausado por rampa
+    followCamera.update(dtRaw, car.group, 0);
   } else {
     followCamera.update(dtRaw, car.group, 0);
     wheelTrails.update(simDt, car, 0, CONFIG.difficulty.speed.maxSpeed);
@@ -553,8 +572,8 @@ function frame(ts) {
 }
 
 // Aplicar skin inicial
-car.applySkin(shopSystem.selectedSkin);
-car.applyAccessories(shopSystem.selectedAccessories);
+car.applySkinWithModel(shopSystem.selectedSkin);
+car.applyAccessoriesWithModels(shopSystem.selectedAccessories);
 
 // Iniciar con el menú
 showMenu();
