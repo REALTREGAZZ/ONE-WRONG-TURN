@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+// Using global THREE from CDN - no import needed
 import { clamp, difficulty01, lerp, randRange, randSigned, smoothstep } from './helpers.js';
 
 class RoadGenerator {

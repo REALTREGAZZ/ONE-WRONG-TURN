@@ -106,7 +106,8 @@
           <h2>CUSTOMIZE YOUR RIDE</h2>
           
           <div class="shop-tabs">
-            <button class="tab-btn active" data-tab="skins">SKINS</button>
+            <button class="tab-btn active" data-tab="vehicles">VEHICLES</button>
+            <button class="tab-btn" data-tab="skins">SKINS</button>
             <button class="tab-btn" data-tab="accessories">ACCESSORIES</button>
           </div>
           
@@ -115,7 +116,11 @@
             <span id="shop-coin-count">0</span>
           </div>
           
-          <div class="shop-content active" id="shop-skins">
+          <div class="shop-content active" id="shop-vehicles">
+            <!-- Dynamic vehicles here -->
+          </div>
+          
+          <div class="shop-content hidden" id="shop-skins">
             <!-- Dynamic skins here -->
           </div>
           
@@ -163,6 +168,10 @@
       <div id="crash-flash" class="crash-flash" aria-hidden="true"></div>
     </div>
 
+    <!-- Load Three.js and GLTFLoader globally from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@r128/examples/js/loaders/GLTFLoader.js"></script>
+    
     <script type="module" src="./game/main.js"></script>
   </body>
 </html>

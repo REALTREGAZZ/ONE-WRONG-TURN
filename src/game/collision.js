@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+// Using global THREE from CDN - no import needed
 
 export function checkWallCollision(car, roadSample) {
   const half = roadSample.width * 0.5 - car.radius;

@@ -1,28 +1,66 @@
 export const SHOP_ITEMS = {
+  vehicles: [
+    {
+      id: 'vehicle-1',
+      name: 'Cyber Sportster',
+      price: 0,
+      owned: true,
+      type: 'glb',
+      description: 'High-tech racer with neon accents.',
+      defaultSkin: 'cyber-yellow'
+    },
+    {
+      id: 'vehicle-2',
+      name: 'Neon Racer',
+      price: 300,
+      owned: false,
+      type: 'glb',
+      description: 'Sleek design with glowing underbody.',
+      defaultSkin: 'neon-blue'
+    },
+    {
+      id: 'vehicle-3',
+      name: 'Synthwave Coupe',
+      price: 300,
+      owned: false,
+      type: 'glb',
+      description: 'Retro-futuristic sports car.',
+      defaultSkin: 'magenta-dream'
+    },
+    {
+      id: 'vehicle-4',
+      name: 'Future Speedster',
+      price: 500,
+      owned: false,
+      type: 'glb',
+      description: 'Ultra-modern performance machine.',
+      defaultSkin: 'orange-blaze'
+    }
+  ],
   skins: [
     {
-      id: 'yellow-neon',
-      name: 'Yellow Neon',
+      id: 'cyber-yellow',
+      name: 'Cyber Yellow',
       price: 0,
       owned: true,
       color: 0xffff00,
-      description: 'The classic. Fast and furious.'
+      description: 'The classic neon yellow.'
     },
     {
-      id: 'cyan-ghost',
-      name: 'Cyan Ghost',
+      id: 'neon-blue',
+      name: 'Neon Blue',
       price: 150,
       owned: false,
       color: 0x00ffff,
-      description: 'Vanish into the night.'
+      description: 'Electric cyan glow.'
     },
     {
-      id: 'magenta-phantom',
-      name: 'Magenta Phantom',
+      id: 'magenta-dream',
+      name: 'Magenta Dream',
       price: 150,
       owned: false,
       color: 0xff00ff,
-      description: 'Liquid metal aesthetic.'
+      description: 'Psychedelic magenta vibes.'
     },
     {
       id: 'orange-blaze',
@@ -30,7 +68,39 @@ export const SHOP_ITEMS = {
       price: 200,
       owned: false,
       color: 0xff6b35,
-      description: 'Leave a trail of fire.'
+      description: 'Fiery orange intensity.'
+    },
+    {
+      id: 'ghost-cyan',
+      name: 'Ghost Cyan',
+      price: 150,
+      owned: false,
+      color: 0x00ffff,
+      description: 'Translucent cyan appearance.'
+    },
+    {
+      id: 'synth-pink',
+      name: 'Synth Pink',
+      price: 150,
+      owned: false,
+      color: 0xff1493,
+      description: 'Hot pink synthwave aesthetic.'
+    },
+    {
+      id: 'lime-neon',
+      name: 'Lime Neon',
+      price: 200,
+      owned: false,
+      color: 0x32cd32,
+      description: 'Electric lime green glow.'
+    },
+    {
+      id: 'purple-haze',
+      name: 'Purple Haze',
+      price: 200,
+      owned: false,
+      color: 0x8a2be2,
+      description: 'Deep purple mystique.'
     }
   ],
   accessories: [
@@ -40,7 +110,7 @@ export const SHOP_ITEMS = {
       price: 100,
       owned: false,
       type: 'stripe',
-      description: 'Racing stripes glow.'
+      description: 'Racing stripes with glow effect.'
     },
     {
       id: 'spoiler-carbon',
@@ -48,15 +118,15 @@ export const SHOP_ITEMS = {
       price: 150,
       owned: false,
       type: 'spoiler',
-      description: 'Aerodynamic edge.'
+      description: 'Aerodynamic carbon fiber spoiler.'
     },
     {
-      id: 'wheels-chrome',
+      id: 'chrome-wheels',
       name: 'Chrome Wheels',
       price: 200,
       owned: false,
       type: 'wheels',
-      description: 'Shiny metal rims.'
+      description: 'Shiny chrome wheel upgrade.'
     },
     {
       id: 'underglow-cyan',
@@ -64,7 +134,7 @@ export const SHOP_ITEMS = {
       price: 250,
       owned: false,
       type: 'underglow',
-      description: 'Light trails beneath.'
+      description: 'Underbody neon light strips.'
     }
   ]
 };
@@ -72,7 +142,8 @@ export const SHOP_ITEMS = {
 export class ShopSystem {
   constructor(coinSystem) {
     this.coinSystem = coinSystem;
-    this.selectedSkin = 'yellow-neon';
+    this.selectedVehicle = 'vehicle-1'; // Default to first vehicle
+    this.selectedSkin = 'cyber-yellow';
     this.selectedAccessories = [];
     this.loadProgress();
   }
@@ -90,13 +161,29 @@ export class ShopSystem {
   }
   
   findItem(itemId) {
+    // Check vehicles
+    for (const item of SHOP_ITEMS.vehicles) {
+      if (item.id === itemId) return item;
+    }
+    // Check skins
     for (const item of SHOP_ITEMS.skins) {
       if (item.id === itemId) return item;
     }
+    // Check accessories
     for (const item of SHOP_ITEMS.accessories) {
       if (item.id === itemId) return item;
     }
     return null;
+  }
+  
+  selectVehicle(vehicleId) {
+    const vehicle = SHOP_ITEMS.vehicles.find(v => v.id === vehicleId);
+    if (vehicle && vehicle.owned) {
+      this.selectedVehicle = vehicleId;
+      this.saveProgress();
+      return true;
+    }
+    return false;
   }
   
   applySkin(skinId) {
@@ -127,6 +214,10 @@ export class ShopSystem {
     return this.selectedAccessories.includes(accessoryId);
   }
   
+  getSelectedVehicle() {
+    return SHOP_ITEMS.vehicles.find(v => v.id === this.selectedVehicle) || SHOP_ITEMS.vehicles[0];
+  }
+  
   getSelectedSkinColor() {
     const skin = SHOP_ITEMS.skins.find(s => s.id === this.selectedSkin);
     return skin ? skin.color : 0xffff00;
@@ -134,6 +225,7 @@ export class ShopSystem {
   
   saveProgress() {
     localStorage.setItem('owt_shop', JSON.stringify({
+      selectedVehicle: this.selectedVehicle,
       selectedSkin: this.selectedSkin,
       selectedAccessories: this.selectedAccessories
     }));
@@ -144,7 +236,8 @@ export class ShopSystem {
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        this.selectedSkin = data.selectedSkin || 'yellow-neon';
+        this.selectedVehicle = data.selectedVehicle || 'vehicle-1';
+        this.selectedSkin = data.selectedSkin || 'cyber-yellow';
         this.selectedAccessories = data.selectedAccessories || [];
       } catch (e) {
         console.warn('Could not load shop progress');
