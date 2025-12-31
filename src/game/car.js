@@ -182,13 +182,113 @@ export class Car {
     });
   }
 
-  applySkin(skinColor, accessories = []) {
-    // Cambiar color del chasis y componentes
-    this.chassis.material.color.setHex(skinColor);
-    this.cabin.material.color.setHex(skinColor);
+  applySkin(skinId, shopSystem) {
+    const skin = shopSystem.SHOP_ITEMS.skins.find(s => s.id === skinId);
+    if (!skin) return;
     
-    // Update emissive color to match
-    this.chassis.material.emissive.setHex(skinColor);
-    this.cabin.material.emissive.setHex(skinColor);
+    const color = skin.color;
+    
+    // Cambiar color del chasis
+    if (this.chassis) {
+      this.chassis.material.color.setHex(color);
+      this.chassis.material.emissive.setHex(color);
+    }
+    
+    // Cambiar color del techo/cabin
+    if (this.cabin) {
+      this.cabin.material.color.setHex(color);
+      this.cabin.material.emissive.setHex(color);
+    }
+    
+    // Cambiar windshields a colores complementarios
+    const windshieldColors = {
+      'yellow-neon': { front: 0x00ffff, back: 0xff00ff },
+      'cyan-ghost': { front: 0xff00ff, back: 0xffff00 },
+      'magenta-phantom': { front: 0xffff00, back: 0x00ffff },
+      'orange-blaze': { front: 0x00ffff, back: 0xff1493 }
+    };
+    
+    const windColors = windshieldColors[skinId] || windshieldColors['yellow-neon'];
+    if (this.windshieldFront) this.windshieldFront.material.color.setHex(windColors.front);
+    if (this.windshieldBack) this.windshieldBack.material.color.setHex(windColors.back);
+    
+    this.currentSkin = skinId;
+  }
+
+  applyAccessories(accessories, shopSystem) {
+    for (const accessoryId of accessories) {
+      const acc = shopSystem.SHOP_ITEMS.accessories.find(a => a.id === accessoryId);
+      if (!acc) continue;
+      
+      if (acc.type === 'spoiler') {
+        this.addSpoiler();
+      } else if (acc.type === 'wheels') {
+        this.upgradeWheels(0xff6b35); // Chrome orange
+      } else if (acc.type === 'underglow') {
+        this.addUnderglow(0x00ffff);
+      } else if (acc.type === 'stripe') {
+        this.addRacingStripes();
+      }
+    }
+  }
+
+  addSpoiler() {
+    if (!this.spoiler) {
+      const spoilerGeo = new THREE.BoxGeometry(1.6, 0.1, 0.2);
+      const spoilerMat = new THREE.MeshStandardMaterial({
+        color: 0xff6b35,
+        emissive: 0xff6b35,
+        metalness: 0.8,
+        roughness: 0.2
+      });
+      this.spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
+      this.spoiler.position.set(0, 0.5, -0.8);
+      this.group.add(this.spoiler);
+    }
+  }
+
+  upgradeWheels(color) {
+    // Cambiar color de todas las ruedas a chrome/metallic
+    for (const wheel of this.wheels || []) {
+      const tire = wheel.children[0];
+      const rim = wheel.children[1];
+      if (tire) {
+        tire.material.color.setHex(color);
+        tire.material.metalness = 1.0;
+        tire.material.roughness = 0.1;
+      }
+      if (rim) {
+        rim.material.color.setHex(0xffffff);
+        rim.material.metalness = 1.0;
+        rim.material.roughness = 0.0;
+      }
+    }
+  }
+
+  addUnderglow(color) {
+    if (!this.underglow) {
+      const underglowGeo = new THREE.BoxGeometry(1.8, 0.05, 0.8);
+      const underglowMat = new THREE.MeshBasicMaterial({
+        color: color,
+        emissive: color
+      });
+      this.underglow = new THREE.Mesh(underglowGeo, underglowMat);
+      this.underglow.position.set(0, -0.4, 0);
+      this.group.add(this.underglow);
+    }
+  }
+
+  addRacingStripes() {
+    if (!this.stripes) {
+      const stripesGeo = new THREE.BoxGeometry(0.15, 0.4, 1.0);
+      const stripesMat = new THREE.MeshStandardMaterial({
+        color: 0x00ffff,
+        emissive: 0x00ffff,
+        metalness: 0.6
+      });
+      this.stripes = new THREE.Mesh(stripesGeo, stripesMat);
+      this.stripes.position.set(0, 0.45, 0);
+      this.group.add(this.stripes);
+    }
   }
 }

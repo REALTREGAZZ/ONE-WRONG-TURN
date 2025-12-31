@@ -81,18 +81,34 @@ export class World {
   }
 
   _createEnvironment() {
-    const groundGeo = new THREE.PlaneGeometry(this.config.road.groundWidth, this.config.road.groundWidth, 1, 1);
+    // Ground/Floor mejorado - más ancho
+    const groundGeo = new THREE.PlaneGeometry(50, 2000); // Más ancho y largo
     const groundMat = new THREE.MeshStandardMaterial({
-      color: this.config.road.groundColor,
-      roughness: 1,
-      metalness: 0,
+      color: 0x1a1a3e,
+      metalness: 0.3,
+      roughness: 0.7,
+      wireframe: false
     });
-
     this.ground = new THREE.Mesh(groundGeo, groundMat);
     this.ground.rotation.x = -Math.PI / 2;
-    this.ground.position.y = -0.11;
-    this.ground.receiveShadow = false;
+    this.ground.position.y = -0.5;
+    this.ground.receiveShadow = true;
     this.scene.add(this.ground);
+
+    // Agregar "bermas" (bordes del camino) para evitar traspaso
+    const bermaLeft = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 0.2, 2000),
+      new THREE.MeshStandardMaterial({ color: 0x333333 })
+    );
+    bermaLeft.position.set(-5, -0.35, 0);
+    this.scene.add(bermaLeft);
+
+    const bermaRight = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 0.2, 2000),
+      new THREE.MeshStandardMaterial({ color: 0x333333 })
+    );
+    bermaRight.position.set(5, -0.35, 0);
+    this.scene.add(bermaRight);
   }
 
   _createRoadMeshes() {
@@ -184,6 +200,7 @@ export class World {
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
     const cfg = this.config.synthwave.buildings;
 
+    // Matriz de colores más variados para edificios
     const mat = new THREE.MeshStandardMaterial({
       color: cfg.color1,
       roughness: 0.4,
@@ -193,7 +210,8 @@ export class World {
       vertexColors: true,
     });
 
-    this._buildingPalette = [cfg.color1, cfg.color2];
+    // Paleta extendida de colores para más variedad
+    this._buildingPalette = [0xff6b35, 0xff1493, 0x00ffff, 0x9933ff, 0xff0000, 0xffff00, 0x00ff00];
 
     this.buildingCount = this.segmentCount * 2;
     this.buildings = new THREE.InstancedMesh(unitBox, mat, this.buildingCount);
@@ -202,6 +220,30 @@ export class World {
 
     this._buildingColor = new THREE.Color();
     this.scene.add(this.buildings);
+
+    // Crear geometría de ventanas para edificios
+    this._createWindowDetails();
+  }
+
+  _createWindowDetails() {
+    // Crear ventanas como detalles adicionales
+    const windowGeo = new THREE.PlaneGeometry(0.3, 0.3);
+    const windowMat = new THREE.MeshBasicMaterial({
+      color: 0xffff00,
+      emissive: 0xffff00,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    this.windowMeshes = [];
+    
+    // Crear unos pocos meshes de ventana que se reusarán
+    for (let i = 0; i < 20; i++) {
+      const windowMesh = new THREE.Mesh(windowGeo, windowMat.clone());
+      windowMesh.visible = false;
+      this.scene.add(windowMesh);
+      this.windowMeshes.push(windowMesh);
+    }
   }
 
   reset() {
