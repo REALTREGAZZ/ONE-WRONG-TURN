@@ -2,37 +2,37 @@
 // Uses global THREE and GLTFLoader from CDN
 
 export class VehicleLoader {
-  // Vehicle configurations with Sketchfab GLB models
+  // Vehicle configurations with local GLTF models
   static VEHICLE_MODELS = {
     'vehicle-1': {
       name: 'Cyber Sportster',
-      url: 'https://skfb.ly/6W9Qp',
-      scale: { x: 1.2, y: 1.2, z: 1.2 },
-      position: { x: 0, y: 0, z: 0 },
+      url: './assets/models/low_poly/scene.gltf',
+      scale: { x: 0.6, y: 0.6, z: 0.6 },
+      position: { x: 0, y: -0.1, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
       defaultSkin: 'cyber-yellow'
     },
     'vehicle-2': {
       name: 'Neon Racer',
-      url: 'https://skfb.ly/6UqNC',
-      scale: { x: 1.0, y: 1.0, z: 1.0 },
-      position: { x: 0, y: 0, z: 0 },
+      url: './assets/models/free/scene.gltf',
+      scale: { x: 0.8, y: 0.8, z: 0.8 },
+      position: { x: 0, y: -0.4, z: 0 },
       rotation: { x: 0, y: Math.PI, z: 0 },
       defaultSkin: 'neon-blue'
     },
     'vehicle-3': {
       name: 'Synthwave Coupe',
-      url: 'https://skfb.ly/6SSJ9',
-      scale: { x: 1.1, y: 1.1, z: 1.1 },
-      position: { x: 0, y: 0, z: 0 },
+      url: './assets/models/muscle/scene.gltf',
+      scale: { x: 0.2, y: 0.2, z: 0.2 },
+      position: { x: 0, y: -0.2, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
       defaultSkin: 'magenta-dream'
     },
     'vehicle-4': {
       name: 'Future Speedster',
-      url: 'https://skfb.ly/oJFtq',
-      scale: { x: 1.3, y: 1.3, z: 1.3 },
-      position: { x: 0, y: 0, z: 0 },
+      url: './assets/models/blnk/scene.gltf',
+      scale: { x: 0.2, y: 0.2, z: 0.2 },
+      position: { x: 0, y: 0.1, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
       defaultSkin: 'orange-blaze'
     }
@@ -71,7 +71,7 @@ export class VehicleLoader {
     // Check cache first
     if (this.modelCache.has(vehicleId)) {
       const cachedModel = this.modelCache.get(vehicleId);
-      this.attachModelToCar(cachedModel, car, modelConfig);
+      this.attachModelToCar(cachedModel.clone(), car, modelConfig);
       return true;
     }
 
