@@ -182,8 +182,10 @@ export class Car {
     });
   }
 
-  applySkin(skinId, shopSystem) {
-    const skin = shopSystem.SHOP_ITEMS.skins.find(s => s.id === skinId);
+  applySkin(skinId) {
+    // Usar CONFIG.SHOP_ITEMS en lugar de parámetro shopSystem
+    const skins = this.rootConfig.SHOP_ITEMS?.skins || [];
+    const skin = skins.find(s => s.id === skinId);
     if (!skin) return;
     
     const color = skin.color;
@@ -215,9 +217,12 @@ export class Car {
     this.currentSkin = skinId;
   }
 
-  applyAccessories(accessories, shopSystem) {
+  applyAccessories(accessories) {
+    // Usar CONFIG.SHOP_ITEMS en lugar de parámetro shopSystem
+    const allAccessories = this.rootConfig.SHOP_ITEMS?.accessories || [];
+    
     for (const accessoryId of accessories) {
-      const acc = shopSystem.SHOP_ITEMS.accessories.find(a => a.id === accessoryId);
+      const acc = allAccessories.find(a => a.id === accessoryId);
       if (!acc) continue;
       
       if (acc.type === 'spoiler') {

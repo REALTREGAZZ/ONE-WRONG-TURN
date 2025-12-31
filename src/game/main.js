@@ -129,6 +129,10 @@ let pointerSteerT = 0;
 
 const coinSystem = new CoinSystem();
 const shopSystem = new ShopSystem(coinSystem);
+const rampSystem = new RampSystem(scene);
+
+// Guardar SHOP_ITEMS en CONFIG para acceso global
+CONFIG.SHOP_ITEMS = SHOP_ITEMS;
 
 const ui = new UI({
   onRestart: () => restart(),
@@ -199,12 +203,12 @@ function createShopItem(item, type) {
     if (isOwned) {
       if (type === 'skin') {
         shopSystem.applySkin(item.id);
-        car.applySkin(item.id, shopSystem);
+        car.applySkin(item.id);
       } else {
         shopSystem.toggleAccessory(item.id);
         // Re-apply all active accessories
-        const activeAccessories = shopSystem.getActiveAccessories ? shopSystem.getActiveAccessories() : [];
-        car.applyAccessories(activeAccessories, shopSystem);
+        const activeAccessories = shopSystem.selectedAccessories || [];
+        car.applyAccessories(activeAccessories);
       }
       renderShop();
     } else {
@@ -317,6 +321,12 @@ function completeRestart() {
   sparks.reset();
   crashDebris.reset();
 
+  // APLICAR SKIN Y ACCESORIOS
+  const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
+  const selectedAccessories = shopSystem.selectedAccessories || [];
+  car.applySkin(selectedSkin);
+  car.applyAccessories(selectedAccessories);
+
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
   updateCoinDisplays();
@@ -339,6 +349,12 @@ function startRun() {
   speedLines.reset();
   sparks.reset();
   crashDebris.reset();
+
+  // APLICAR SKIN Y ACCESORIOS
+  const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
+  const selectedAccessories = shopSystem.selectedAccessories || [];
+  car.applySkin(selectedSkin);
+  car.applyAccessories(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -524,6 +540,7 @@ function frame(ts) {
 
     followCamera.updateVelocityShake(dtRaw, speed, CONFIG.difficulty.speed.maxSpeed);
     followCamera.update(dtRaw, car.group, speedRatio);
+    rampSystem.update(Date.now());
   } else {
     followCamera.update(dtRaw, car.group, 0);
     wheelTrails.update(simDt, car, 0, CONFIG.difficulty.speed.maxSpeed);
@@ -536,7 +553,8 @@ function frame(ts) {
 }
 
 // Aplicar skin inicial
-car.applySkin(shopSystem.getSelectedSkinColor());
+car.applySkin(shopSystem.selectedSkin);
+car.applyAccessories(shopSystem.selectedAccessories);
 
 // Iniciar con el menú
 showMenu();
