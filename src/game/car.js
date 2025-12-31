@@ -12,6 +12,10 @@ export class Car {
     // The car model group (for visual parts)
     this.model = new THREE.Group();
     this.group.add(this.model);
+    
+    // Property for loaded GLB vehicle model
+    this.vehicleModel = null;
+    this.accessories = [];
 
     // 1. Chassis (Main Body)
     // length (X) = 1.2, height (Y) = 0.8, width (Z) = 2.0
@@ -299,28 +303,33 @@ export class Car {
   }
 
   async applySkinWithModel(skinId) {
-    // Primero aplicar colores (fallback)
-    this.applySkin(skinId);
-    
-    // Luego intentar cargar modelo GLB
+    // Intentar cargar modelo GLB
     try {
       await VehicleLoader.applyVehicleSkin(this, skinId);
     } catch (e) {
-      console.warn('Fallback a modelo procedural para:', skinId);
+      console.warn('Fallback a procedural:', e);
+      // Fallback: aplicar color solo
+      this.applySkin(skinId);
     }
   }
-  
+
   async applyAccessoriesWithModels(accessories) {
-    // Aplicar accesorios procedurales primero (fallback)
-    this.applyAccessories(accessories);
-    
-    // Luego cargar modelos GLB
+    // Limpiar accesorios anteriores
+    for (const acc of this.accessories) {
+      this.group.remove(acc);
+    }
+    this.accessories = [];
+
+    // Cargar nuevos accesorios
     for (const accId of accessories) {
       try {
         await VehicleLoader.applyAccessory(this, accId);
+        this.accessories.push(accId);
       } catch (e) {
-        console.warn('Fallback a accesorio procedural para:', accId);
+        console.warn('Fallback a procedural para:', accId);
+        // Fallback: aplicar procedural
+        this.applyAccessories([accId]);
       }
     }
   }
-}
+  }
