@@ -1,6 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { clamp, lerp } from './helpers.js';
-import { VehicleLoader } from './vehicleLoader.js';
 
 export class Car {
   constructor(config) {
@@ -13,9 +12,8 @@ export class Car {
     this.model = new THREE.Group();
     this.group.add(this.model);
     
-    // Property for loaded GLB vehicle model
-    this.vehicleModel = null;
-    this.accessories = [];
+    // Property for active accessories
+    this.activeAccessories = [];
 
     // 1. Chassis (Main Body)
     // length (X) = 1.2, height (Y) = 0.8, width (Z) = 2.0
@@ -223,7 +221,23 @@ export class Car {
   }
 
   applyAccessories(accessories) {
-    // Usar CONFIG.SHOP_ITEMS en lugar de parámetro shopSystem
+    // Limpiar accesorios anteriores
+    if (this.spoiler) {
+      this.group.remove(this.spoiler);
+      this.spoiler = null;
+    }
+    if (this.underglow) {
+      this.group.remove(this.underglow);
+      this.underglow = null;
+    }
+    if (this.stripes) {
+      this.group.remove(this.stripes);
+      this.stripes = null;
+    }
+    
+    // Restaurar ruedas originales
+    this.upgradeWheels(0x333333, 0.3, 0.9);
+
     const allAccessories = this.rootConfig.SHOP_ITEMS?.accessories || [];
     
     for (const accessoryId of accessories) {
@@ -233,7 +247,7 @@ export class Car {
       if (acc.type === 'spoiler') {
         this.addSpoiler();
       } else if (acc.type === 'wheels') {
-        this.upgradeWheels(0xff6b35); // Chrome orange
+        this.upgradeWheels(0xff6b35, 0.1, 1.0); // Chrome orange
       } else if (acc.type === 'underglow') {
         this.addUnderglow(0x00ffff);
       } else if (acc.type === 'stripe') {
@@ -257,20 +271,20 @@ export class Car {
     }
   }
 
-  upgradeWheels(color) {
-    // Cambiar color de todas las ruedas a chrome/metallic
+  upgradeWheels(color, roughness = 0.3, metalness = 0.9) {
+    // Cambiar color de todas las ruedas
     for (const wheel of this.wheels || []) {
       const tire = wheel.children[0];
       const rim = wheel.children[1];
       if (tire) {
         tire.material.color.setHex(color);
-        tire.material.metalness = 1.0;
-        tire.material.roughness = 0.1;
+        tire.material.metalness = metalness;
+        tire.material.roughness = roughness;
       }
       if (rim) {
-        rim.material.color.setHex(0xffffff);
-        rim.material.metalness = 1.0;
-        rim.material.roughness = 0.0;
+        rim.material.color.setHex(roughness === 0.3 ? 0x1a1a1a : 0xffffff);
+        rim.material.metalness = metalness;
+        rim.material.roughness = roughness;
       }
     }
   }
@@ -301,35 +315,4 @@ export class Car {
       this.group.add(this.stripes);
     }
   }
-
-  async applySkinWithModel(skinId) {
-    // Intentar cargar modelo GLB
-    try {
-      await VehicleLoader.applyVehicleSkin(this, skinId);
-    } catch (e) {
-      console.warn('Fallback a procedural:', e);
-      // Fallback: aplicar color solo
-      this.applySkin(skinId);
-    }
-  }
-
-  async applyAccessoriesWithModels(accessories) {
-    // Limpiar accesorios anteriores
-    for (const acc of this.accessories) {
-      this.group.remove(acc);
-    }
-    this.accessories = [];
-
-    // Cargar nuevos accesorios
-    for (const accId of accessories) {
-      try {
-        await VehicleLoader.applyAccessory(this, accId);
-        this.accessories.push(accId);
-      } catch (e) {
-        console.warn('Fallback a procedural para:', accId);
-        // Fallback: aplicar procedural
-        this.applyAccessories([accId]);
-      }
-    }
-  }
-  }
+}

@@ -321,13 +321,13 @@ async function completeRestart() {
   sparks.reset();
   crashDebris.reset();
 
-  // APLICAR SKIN Y ACCESORIOS CON MODELOS GLB
-  const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
-  const selectedAccessories = shopSystem.selectedAccessories || [];
+  // APLICAR SKIN Y ACCESORIOS (Procedurales para estabilidad)
+  const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
+  const selectedAccessories = shopSystem?.selectedAccessories || [];
   
-  // Cargar modelos 3D
-  await car.applySkinWithModel(selectedSkin);
-  await car.applyAccessoriesWithModels(selectedAccessories);
+  // Aplicar sin esperar (no causa delays)
+  car.applySkin(selectedSkin);
+  car.applyAccessories(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -352,13 +352,13 @@ async function startRun() {
   sparks.reset();
   crashDebris.reset();
 
-  // APLICAR SKIN Y ACCESORIOS CON MODELOS GLB
-  const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
-  const selectedAccessories = shopSystem.selectedAccessories || [];
+  // APLICAR SKIN Y ACCESORIOS (Procedurales para estabilidad)
+  const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
+  const selectedAccessories = shopSystem?.selectedAccessories || [];
   
-  // Cargar modelos 3D
-  await car.applySkinWithModel(selectedSkin);
-  await car.applyAccessoriesWithModels(selectedAccessories);
+  // Aplicar sin esperar (no causa delays)
+  car.applySkin(selectedSkin);
+  car.applyAccessories(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
