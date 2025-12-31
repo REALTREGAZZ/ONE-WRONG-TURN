@@ -161,6 +161,7 @@ export const CONFIG = {
     // Turn radius decreases over time (10% every 10 seconds)
     sharpnessIncrease: 0.01, // 1% per second = 10% per 10 seconds
   },
+  SHOP_ITEMS: {}, // Se llenará desde main.js
 };
 
 export const DEATH_MESSAGES = [
