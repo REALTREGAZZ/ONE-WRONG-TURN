@@ -23,10 +23,15 @@ const app = document.getElementById('app');
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 const renderer = new THREE.WebGLRenderer({
-  antialias: false,
+  antialias: true, // Improved for desktop
   alpha: false,
   powerPreference: 'high-performance',
 });
+
+// Improved color rendering
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
 
 // Adjust pixel ratio for mobile vs desktop
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
@@ -66,30 +71,37 @@ function createGradientTexture() {
   return texture;
 }
 
-scene.background = createGradientTexture();
+const envTexture = createGradientTexture();
+scene.background = envTexture;
+scene.environment = envTexture; // Set as environment map for all materials
 scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
 
 // Reactive synthwave lighting system
-scene.add(new THREE.AmbientLight(0xffffff, CONFIG.synthwave.lights.ambient.intensity));
+scene.add(new THREE.AmbientLight(0xffffff, 1.0));
 
 // Cyan point light (left side)
 const cyanCfg = CONFIG.synthwave.lights.pointLights.cyan;
-const cyanLight = new THREE.PointLight(cyanCfg.color, cyanCfg.intensity, cyanCfg.distance);
+const cyanLight = new THREE.PointLight(cyanCfg.color, 1.5, cyanCfg.distance);
 cyanLight.position.set(-4, 3, 2);
 scene.add(cyanLight);
 
 // Magenta point light (right side)
 const magentaCfg = CONFIG.synthwave.lights.pointLights.magenta;
-const magentaLight = new THREE.PointLight(magentaCfg.color, magentaCfg.intensity, magentaCfg.distance);
+const magentaLight = new THREE.PointLight(magentaCfg.color, 1.5, magentaCfg.distance);
 magentaLight.position.set(4, 3, 2);
 scene.add(magentaLight);
 
 // Directional sun (for definition)
-const sun = new THREE.DirectionalLight(0xffffff, 0.4);
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
 sun.position.set(5, 12, -4);
 scene.add(sun);
+
+// Fill light for better form definition
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+fillLight.position.set(-5, 5, -4);
+scene.add(fillLight);
 
 const audio = new AudioManager();
 
@@ -476,14 +488,13 @@ function onResize() {
 window.addEventListener('resize', onResize);
 
 window.addEventListener('keydown', (e) => {
-  // INVERTIDOS: A = derecha, D = izquierda
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
-    keys.right = true;  // A gira a la DERECHA
+    keys.left = true;
     hintT = 0;
     e.preventDefault();
   }
   if (e.code === 'KeyD' || e.code === 'ArrowRight') {
-    keys.left = true;   // D gira a la IZQUIERDA
+    keys.right = true;
     hintT = 0;
     e.preventDefault();
   }
@@ -497,8 +508,8 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.right = false;
-  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.left = false;
+  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
 });
 
 document.getElementById('btn-start')?.addEventListener('click', () => {
@@ -596,6 +607,7 @@ function frame(ts) {
       roadInfo.centerX,
       () => {
         isPaused = true;
+        car.jump(15); // Trigger physics jump
         rampSystem.showMultiplierWheel((selectedMult) => {
           rampSystem.activateMultiplier(selectedMult);
           isPaused = false;
@@ -603,12 +615,9 @@ function frame(ts) {
       }
     );
 
-    // Aplicar gravedad si está en el aire
-    if (rampSystem.isCarInAir()) {
-      const verticalVel = rampSystem.getVerticalVelocity();
-      car.group.position.y += verticalVel * dtRaw;
-    } else {
-      car.group.position.y = 0.55; // Ground level
+    // Sync car in air state with ramp system
+    if (rampSystem.isCarInAir() && !car.isInAir) {
+      car.jump(rampSystem.getVerticalVelocity());
     }
 
     const road = world.sampleRoad(distance);

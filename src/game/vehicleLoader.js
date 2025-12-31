@@ -2,38 +2,42 @@
 // Uses global THREE from CDN and GLTFLoader from local file
 
 export class VehicleLoader {
+  // Shared loading manager
+  static loadingManager = new THREE.LoadingManager();
+  static isAllLoaded = false;
+  
   // Vehicle configurations with local GLTF models
   static VEHICLE_MODELS = {
     'vehicle-1': {
       name: 'Cyber Sportster',
       url: './assets/models/low_poly/scene.gltf',
-      scale: { x: 0.6, y: 0.6, z: 0.6 },
-      position: { x: 0, y: -0.1, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
+      scale: 2.2,
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: Math.PI, z: 0 },
       defaultSkin: 'cyber-yellow'
     },
     'vehicle-2': {
       name: 'Neon Racer',
       url: './assets/models/free/scene.gltf',
-      scale: { x: 0.8, y: 0.8, z: 0.8 },
-      position: { x: 0, y: -0.4, z: 0 },
+      scale: 0.015,
+      position: { x: 0, y: 0, z: 0 },
       rotation: { x: 0, y: Math.PI, z: 0 },
       defaultSkin: 'neon-blue'
     },
     'vehicle-3': {
       name: 'Synthwave Coupe',
       url: './assets/models/muscle/scene.gltf',
-      scale: { x: 0.2, y: 0.2, z: 0.2 },
-      position: { x: 0, y: -0.2, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
+      scale: 0.012,
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: Math.PI, z: 0 },
       defaultSkin: 'magenta-dream'
     },
     'vehicle-4': {
       name: 'Future Speedster',
       url: './assets/models/blnk/scene.gltf',
-      scale: { x: 0.2, y: 0.2, z: 0.2 },
-      position: { x: 0, y: 0.1, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
+      scale: 0.6,
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: Math.PI, z: 0 },
       defaultSkin: 'orange-blaze'
     }
   };
@@ -53,7 +57,8 @@ export class VehicleLoader {
         console.warn('GLTFLoader not available globally');
         return null;
       }
-      this.loaderCache.set(vehicleId, new window.GLTFLoader());
+      const loader = new window.GLTFLoader(this.loadingManager);
+      this.loaderCache.set(vehicleId, loader);
     }
     return this.loaderCache.get(vehicleId);
   }
@@ -84,10 +89,21 @@ export class VehicleLoader {
       console.log(`Loading GLB model for ${vehicleId}: ${modelConfig.url}`);
       
       return new Promise((resolve, reject) => {
+        // Set timeout fallback
+        const timeout = setTimeout(() => {
+          console.warn(`Load timeout for ${vehicleId}, using fallback`);
+          this.loadProceduralFallback(car, modelConfig.defaultSkin);
+          resolve(false);
+        }, 5000);
+
         loader.load(
           modelConfig.url,
           (gltf) => {
+            clearTimeout(timeout);
             const model = gltf.scene;
+            
+            // Fix materials and orientation
+            this.prepareModel(model);
             
             // Cache the loaded model
             this.modelCache.set(vehicleId, model.clone());
@@ -99,16 +115,16 @@ export class VehicleLoader {
             resolve(true);
           },
           (progress) => {
-            // Progress callback - could be used for loading UI
             if (progress.total > 0) {
               const percent = Math.round((progress.loaded / progress.total) * 100);
-              console.log(`Loading ${vehicleId}: ${percent}%`);
+              // console.log(`Loading ${vehicleId}: ${percent}%`);
             }
           },
           (error) => {
+            clearTimeout(timeout);
             console.warn(`Failed to load GLB model for ${vehicleId}:`, error);
             this.loadProceduralFallback(car, modelConfig.defaultSkin);
-            resolve(false); // Resolve instead of reject to maintain game flow
+            resolve(false);
           }
         );
       });
@@ -121,6 +137,48 @@ export class VehicleLoader {
   }
 
   /**
+   * Prepare model: fix orientation, materials, etc.
+   */
+  static prepareModel(model) {
+    let meshCount = 0;
+    const materials = new Set();
+
+    model.traverse(child => {
+      if (child.isMesh) {
+        meshCount++;
+        // Fix black materials by replacing with MeshStandardMaterial
+        const oldMat = child.material;
+        const color = oldMat.color ? oldMat.color.clone() : new THREE.Color(0xff0000);
+        
+        // Success criteria: Red metallic paint visible
+        child.material = new THREE.MeshStandardMaterial({
+          color: color,
+          metalness: 0.5,
+          roughness: 0.4,
+          side: THREE.DoubleSide,
+          map: oldMat.map,
+          normalMap: oldMat.normalMap,
+          emissive: oldMat.emissive ? oldMat.emissive.clone() : new THREE.Color(0x000000),
+          emissiveIntensity: oldMat.emissiveIntensity || 0
+        });
+        
+        if (child.material.map) materials.add('texture');
+        materials.add(child.material.type);
+        
+        // Ensure lighting environment map is applied later if available
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    // Debug log: print loaded materials, textures, geometry per vehicle
+    console.log(`Model preparation complete:
+      Meshes: ${meshCount}
+      Materials: ${Array.from(materials).join(', ')}
+      Hierarchy: ${model.children.length} root children`);
+  }
+
+  /**
    * Attach a loaded model to the car
    */
   static attachModelToCar(model, car, modelConfig) {
@@ -130,9 +188,12 @@ export class VehicleLoader {
     }
 
     // Apply model configuration
-    if (modelConfig.scale) {
+    if (typeof modelConfig.scale === 'number') {
+      model.scale.setScalar(modelConfig.scale);
+    } else if (modelConfig.scale) {
       model.scale.set(modelConfig.scale.x, modelConfig.scale.y, modelConfig.scale.z);
     }
+    
     if (modelConfig.position) {
       model.position.set(modelConfig.position.x, modelConfig.position.y, modelConfig.position.z);
     }
@@ -146,6 +207,26 @@ export class VehicleLoader {
     // Set reference for skin application
     car.currentModel = model;
     car.modelType = 'glb';
+    
+    // Find wheels in GLB model
+    car.wheels = [];
+    model.traverse(child => {
+      if (child.isMesh && (child.name.toLowerCase().includes('wheel') || child.name.toLowerCase().includes('tire'))) {
+        car.wheels.push(child);
+      }
+    });
+    
+    // Adjust bounding box for car physics body if needed
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Update car radius based on model width (X axis)
+    // We use a bit of margin for better gameplay
+    car.radius = size.x * 0.45;
+    
+    console.log(`Loaded vehicle size: ${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)} for ${modelConfig.name}`);
+    console.log(`Updated car radius to: ${car.radius.toFixed(2)}`);
+    console.log(`Found ${car.wheels.length} wheels in model`);
   }
 
   /**
@@ -203,14 +284,32 @@ export class VehicleLoader {
     // Traverse model and modify materials
     model.traverse((child) => {
       if (child.isMesh && child.material) {
-        // Preserve original material properties but change color
-        if (child.material.color) {
+        // Ensure we are using MeshStandardMaterial for better lighting
+        if (!(child.material instanceof THREE.MeshStandardMaterial)) {
+          const oldMat = child.material;
+          child.material = new THREE.MeshStandardMaterial({
+            map: oldMat.map,
+            normalMap: oldMat.normalMap,
+            side: THREE.DoubleSide
+          });
+        }
+        
+        // We only want to change the color of the "body" parts.
+        // Heuristic: if it's not a wheel/tire and not glass/window
+        const name = child.name.toLowerCase();
+        const isBody = !name.includes('wheel') && !name.includes('tire') && !name.includes('glass') && !name.includes('window');
+        
+        if (isBody) {
           child.material.color.setHex(color);
+          child.material.metalness = 0.7;
+          child.material.roughness = 0.2;
+          
+          if (child.material.emissive) {
+            child.material.emissive.setHex(color);
+            child.material.emissiveIntensity = 0.2;
+          }
         }
-        if (child.material.emissive) {
-          child.material.emissive.setHex(color);
-          child.material.emissiveIntensity = 0.3;
-        }
+        
         child.material.needsUpdate = true;
       }
     });

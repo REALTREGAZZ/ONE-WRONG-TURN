@@ -22,12 +22,26 @@ export class Car {
     this.speed = this.config.baseSpeed;
     this.distance = 0;
 
+    // Physics properties
+    this.velocity = new THREE.Vector3();
+    this.angularVelocity = 0;
+    this.acceleration = 0;
+    this.steering = 0;
+    this.verticalVelocity = 0;
+    this.isInAir = false;
+
     // Adjusted Y position so wheels touch the ground
     // Wheel center at -0.4, radius 0.15 => bottom at -0.55.
     this.group.position.set(0, 0.55, 0);
 
     // Used for wall collision margin (radius should be slightly less than half of car width X = 1.2)
-    this.radius = this.config.length * 0.45;
+    this.radius = (this.config.length || 1.2) * 0.45;
+
+    // Suspension settings
+    this.suspensionRestLength = 0.6;
+    this.suspensionStiffness = 30.0;
+    this.suspensionDamping = 2.0;
+    this.wheelRadius = 0.15;
 
     // GLB model support
     this.currentModel = null;
@@ -169,36 +183,70 @@ export class Car {
     this.wheels.forEach(w => w.rotation.x = 0);
   }
 
+  jump(velocity) {
+    this.isInAir = true;
+    this.verticalVelocity = velocity;
+  }
+
   update(dt, steer, speed) {
     this.speed = speed;
     this.distance += this.speed * dt;
 
-    if (steer !== 0) {
-      this.yaw += steer * this.config.steeringRate * dt;
-    } else {
-      this.yaw += (0 - this.yaw) * Math.min(1, this.config.autoCenterRate * dt);
+    // Physics-driven movement
+    // 1. Handling Steering
+    const targetSteering = steer * (this.config.steeringRate || 2.0);
+    this.steering = lerp(this.steering, targetSteering, dt * 5);
+    
+    // Steering influence decreases with speed for stability
+    const steerSpeedFactor = clamp(1.0 - (this.speed / this.config.maxSpeed) * 0.5, 0.5, 1.0);
+    this.yaw += this.steering * steerSpeedFactor * dt;
+    
+    if (steer === 0) {
+      this.yaw += (0 - this.yaw) * Math.min(1, (this.config.autoCenterRate || 7.5) * dt);
     }
+    
+    const maxYaw = this.config.maxYaw || Math.PI * 0.25;
+    this.yaw = clamp(this.yaw, -maxYaw, maxYaw);
 
-    this.yaw = clamp(this.yaw, -this.config.maxYaw, this.config.maxYaw);
-
-    const dx = Math.sin(this.yaw) * this.speed * dt;
-    const dz = Math.cos(this.yaw) * this.speed * dt;
-
-    this.group.position.x += dx;
-    this.group.position.z += dz;
-
+    // 2. Velocity calculation
+    const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+    this.velocity.copy(forward).multiplyScalar(this.speed);
+    
+    this.group.position.addScaledVector(this.velocity, dt);
     this.group.rotation.y = this.yaw;
 
-    // Z-Axis tilt based on steering input
-    const targetTiltZ = steer * THREE.MathUtils.degToRad(this.config.tiltAngle || 18);
-    this.group.rotation.z = lerp(this.group.rotation.z, targetTiltZ, 0.15);
+    // 3. Vertical physics (simplified gravity)
+    if (this.isInAir) {
+      this.verticalVelocity -= 25.0 * dt; // gravity
+      this.group.position.y += this.verticalVelocity * dt;
+      
+      if (this.group.position.y <= 0.55) {
+        this.group.position.y = 0.55;
+        this.verticalVelocity = 0;
+        this.isInAir = false;
+      }
+    }
 
-    // Rotate wheels
-    const wheelRadius = 0.15;
-    const wheelCircumference = Math.PI * 2 * wheelRadius;
-    const wheelRotation = (this.distance / wheelCircumference) * (Math.PI * 2);
-    this.wheels.forEach(wheel => {
-      wheel.rotation.x = wheelRotation;
+    // 4. Suspension Animation (Visual only)
+    const bounce = Math.sin(this.distance * 0.2) * 0.015 * (this.speed / (this.config.maxSpeed || 60));
+    this.model.position.y = bounce;
+    
+    // 5. Tilt based on steering (Inertia)
+    const targetTiltZ = -this.steering * 0.08;
+    this.group.rotation.z = lerp(this.group.rotation.z, targetTiltZ, dt * 8);
+
+    // 6. Wheel rotation and steering
+    const wheelRotationSpeed = (this.speed / this.wheelRadius) * dt;
+    this.wheels.forEach((wheel, i) => {
+      // Rotation on its axis
+      wheel.rotateX(wheelRotationSpeed);
+      
+      // Steering for front wheels (assume first 2 wheels are front if we have 4)
+      if (this.wheels.length >= 4 && i < 2) {
+        // We need to handle this carefully if it's a GLB model
+        // If it's a procedural wheel, it's a Group containing tire and rim
+        // If it's a GLB mesh, we might need a parent group for steering
+      }
     });
   }
 
