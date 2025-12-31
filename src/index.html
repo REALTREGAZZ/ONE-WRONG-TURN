@@ -168,9 +168,14 @@
       <div id="crash-flash" class="crash-flash" aria-hidden="true"></div>
     </div>
 
-    <!-- Load Three.js and GLTFLoader globally from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@r128/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+      // Ensure GLTFLoader is available globally
+      if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
+        window.GLTFLoader = THREE.GLTFLoader;
+      }
+    </script>
     
     <script type="module" src="./game/main.js"></script>
   </body>
