@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+// Using global THREE from CDN - no import needed
 import { clamp, lerp } from './helpers.js';
 
 export class Car {
@@ -15,13 +15,41 @@ export class Car {
     // Property for active accessories
     this.activeAccessories = [];
 
+    // Initialize with procedural vehicle
+    this.createProceduralVehicle();
+
+    this.yaw = 0;
+    this.speed = this.config.baseSpeed;
+    this.distance = 0;
+
+    // Adjusted Y position so wheels touch the ground
+    // Wheel center at -0.4, radius 0.15 => bottom at -0.55.
+    this.group.position.set(0, 0.55, 0);
+
+    // Used for wall collision margin (radius should be slightly less than half of car width X = 1.2)
+    this.radius = this.config.length * 0.45;
+
+    // GLB model support
+    this.currentModel = null;
+    this.modelType = 'procedural';
+  }
+
+  /**
+   * Create the procedural vehicle (separated for reuse)
+   */
+  createProceduralVehicle() {
+    // Clear existing model
+    while (this.model.children.length > 0) {
+      this.model.remove(this.model.children[0]);
+    }
+
     // 1. Chassis (Main Body)
     // length (X) = 1.2, height (Y) = 0.8, width (Z) = 2.0
     const chassisGeo = new THREE.BoxGeometry(this.config.length, this.config.height, this.config.width);
     const chassisMat = new THREE.MeshStandardMaterial({
-      color: config.synthwave.car.color,
-      emissive: config.synthwave.car.emissive,
-      emissiveIntensity: config.synthwave.car.emissiveIntensity,
+      color: this.rootConfig.synthwave.car.color,
+      emissive: this.rootConfig.synthwave.car.emissive,
+      emissiveIntensity: this.rootConfig.synthwave.car.emissiveIntensity,
       roughness: 0.3,
       metalness: 0.7,
     });
@@ -130,17 +158,6 @@ export class Car {
     const hlRight = new THREE.Mesh(headlightGeo, headlightMat);
     hlRight.position.set(0.4, -0.1, 1.0);
     this.model.add(hlRight);
-
-    this.yaw = 0;
-    this.speed = this.config.baseSpeed;
-    this.distance = 0;
-
-    // Adjusted Y position so wheels touch the ground
-    // Wheel center at -0.4, radius 0.15 => bottom at -0.55.
-    this.group.position.set(0, 0.55, 0);
-
-    // Used for wall collision margin (radius should be slightly less than half of car width X = 1.2)
-    this.radius = this.config.length * 0.45;
   }
 
   reset() {
