@@ -1,5 +1,5 @@
 // Vehicle loader for GLB models with procedural fallback
-// Uses global THREE and GLTFLoader from CDN
+// Uses global THREE from CDN and GLTFLoader from local file
 
 export class VehicleLoader {
   // Vehicle configurations with local GLTF models
