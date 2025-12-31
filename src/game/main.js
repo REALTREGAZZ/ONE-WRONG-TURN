@@ -14,6 +14,7 @@ import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
 import { CoinSystem } from './coinSystem.js';
 import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
+import { RampSystem } from './ramps.js';
 
 const app = document.getElementById('app');
 
@@ -198,9 +199,12 @@ function createShopItem(item, type) {
     if (isOwned) {
       if (type === 'skin') {
         shopSystem.applySkin(item.id);
-        car.applySkin(item.color);
+        car.applySkin(item.id, shopSystem);
       } else {
         shopSystem.toggleAccessory(item.id);
+        // Re-apply all active accessories
+        const activeAccessories = shopSystem.getActiveAccessories ? shopSystem.getActiveAccessories() : [];
+        car.applyAccessories(activeAccessories, shopSystem);
       }
       renderShop();
     } else {
@@ -263,7 +267,8 @@ function crash() {
   showDeathAfterFreeze = true;
   hintT = 0;
   
-  const earned = coinSystem.earnCoins(distance);
+  const multiplier = rampSystem.getMultiplier();
+  const earned = coinSystem.earnCoins(distance) * multiplier;
   gamesPlayed++;
   totalDistance += distance;
   lastRun = distance;
@@ -377,13 +382,14 @@ function onResize() {
 window.addEventListener('resize', onResize);
 
 window.addEventListener('keydown', (e) => {
+  // INVERTIDOS: A = derecha, D = izquierda
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
-    keys.left = true;
+    keys.right = true;  // A gira a la DERECHA
     hintT = 0;
     e.preventDefault();
   }
   if (e.code === 'KeyD' || e.code === 'ArrowRight') {
-    keys.right = true;
+    keys.left = true;   // D gira a la IZQUIERDA
     hintT = 0;
     e.preventDefault();
   }
@@ -397,8 +403,8 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
-  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
+  if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.right = false;
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.left = false;
 });
 
 document.getElementById('btn-start')?.addEventListener('click', () => {
@@ -485,6 +491,15 @@ function frame(ts) {
     distance = car.group.position.z;
 
     world.update(distance);
+
+    // Check ramp collisions
+    const rampCheck = rampSystem.checkCollision(car.group.position, distance);
+    if (rampCheck?.rampHit) {
+      rampSystem.showMultiplierUI((selectedMultiplier) => {
+        rampSystem.activateMultiplier(selectedMultiplier);
+        // Efecto visual: velocidad boost, partículas, etc
+      });
+    }
 
     const road = world.sampleRoad(distance);
     const collision = checkWallCollision(car, road);
