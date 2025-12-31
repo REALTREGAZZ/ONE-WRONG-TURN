@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { clamp, lerp } from './helpers.js';
+import { VehicleLoader } from './vehicleLoader.js';
 
 export class Car {
   constructor(config) {
@@ -294,6 +295,32 @@ export class Car {
       this.stripes = new THREE.Mesh(stripesGeo, stripesMat);
       this.stripes.position.set(0, 0.45, 0);
       this.group.add(this.stripes);
+    }
+  }
+
+  async applySkinWithModel(skinId) {
+    // Primero aplicar colores (fallback)
+    this.applySkin(skinId);
+    
+    // Luego intentar cargar modelo GLB
+    try {
+      await VehicleLoader.applyVehicleSkin(this, skinId);
+    } catch (e) {
+      console.warn('Fallback a modelo procedural para:', skinId);
+    }
+  }
+  
+  async applyAccessoriesWithModels(accessories) {
+    // Aplicar accesorios procedurales primero (fallback)
+    this.applyAccessories(accessories);
+    
+    // Luego cargar modelos GLB
+    for (const accId of accessories) {
+      try {
+        await VehicleLoader.applyAccessory(this, accId);
+      } catch (e) {
+        console.warn('Fallback a accesorio procedural para:', accId);
+      }
     }
   }
 }
