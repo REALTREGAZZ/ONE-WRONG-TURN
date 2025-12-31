@@ -200,15 +200,15 @@ function createShopItem(item, type) {
     <div class="item-price ${isOwned ? 'owned' : ''}">${isOwned ? 'OWNED' : item.price}</div>
   `;
   
-  itemEl.addEventListener('click', () => {
+  itemEl.addEventListener('click', async () => {
     if (isOwned) {
       if (type === 'skin') {
         shopSystem.applySkin(item.id);
-        car.applySkin(item.id);
+        await car.applySkinWithModel(item.id);
       } else {
         shopSystem.toggleAccessory(item.id);
         const activeAccessories = shopSystem.selectedAccessories || [];
-        car.applyAccessories(activeAccessories);
+        await car.applyAccessoriesWithModels(activeAccessories);
       }
       renderShop();
     } else {
@@ -298,7 +298,7 @@ function restart() {
   completeRestart();
 }
 
-function completeRestart() {
+async function completeRestart() {
   audio.playClick();
 
   mode = 'playing';
@@ -321,11 +321,13 @@ function completeRestart() {
   sparks.reset();
   crashDebris.reset();
 
-  // APLICAR SKIN Y ACCESORIOS
+  // APLICAR SKIN Y ACCESORIOS CON MODELOS GLB
   const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
   const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkin(selectedSkin);
-  car.applyAccessories(selectedAccessories);
+  
+  // Cargar modelos 3D
+  await car.applySkinWithModel(selectedSkin);
+  await car.applyAccessoriesWithModels(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -334,7 +336,7 @@ function completeRestart() {
   gameplayStart();
 }
 
-function startRun() {
+async function startRun() {
   mode = 'playing';
   freezeT = 0;
   showDeathAfterFreeze = false;
@@ -350,11 +352,13 @@ function startRun() {
   sparks.reset();
   crashDebris.reset();
 
-  // APLICAR SKIN Y ACCESORIOS
+  // APLICAR SKIN Y ACCESORIOS CON MODELOS GLB
   const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
   const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkin(selectedSkin);
-  car.applyAccessories(selectedAccessories);
+  
+  // Cargar modelos 3D
+  await car.applySkinWithModel(selectedSkin);
+  await car.applyAccessoriesWithModels(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
