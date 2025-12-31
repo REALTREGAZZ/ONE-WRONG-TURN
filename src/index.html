@@ -7,164 +7,160 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <!-- Pantalla de Inicio -->
-    <div id="menu-main" class="menu-screen">
-      <div class="menu-container">
-        <h1 class="game-title">ONE WRONG TURN</h1>
-        <p class="subtitle">Push your limits. One mistake and you're done.</p>
-        
-        <button id="btn-play" class="btn btn-primary">PLAY</button>
-        <button id="btn-shop" class="btn btn-secondary">SHOP</button>
-        <button id="btn-stats" class="btn btn-tertiary">STATS</button>
-        
-        <div class="coin-display">
-          <div class="coin-icon">💰</div>
-          <span id="coin-count">0</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pantalla de Tienda -->
-    <div id="menu-shop" class="menu-screen hidden">
-      <div class="shop-container">
-        <h2>CUSTOMIZE YOUR RIDE</h2>
-        
-        <div class="shop-tabs">
-          <button class="tab-btn active" data-tab="skins">SKINS</button>
-          <button class="tab-btn" data-tab="accessories">ACCESSORIES</button>
-        </div>
-        
-        <div class="coin-display shop-coin-display">
-          <div class="coin-icon">💰</div>
-          <span id="shop-coin-count">0</span>
-        </div>
-        
-        <div class="shop-content active" id="shop-skins">
-          <!-- Skins dinámicos aquí -->
-        </div>
-        
-        <div class="shop-content hidden" id="shop-accessories">
-          <!-- Accesorios dinámicos aquí -->
-        </div>
-        
-        <button id="btn-back-shop" class="btn btn-back">BACK</button>
-      </div>
-    </div>
-
-    <!-- Pantalla de Stats -->
-    <div id="menu-stats" class="menu-screen hidden">
-      <div class="stats-container">
-        <h2>STATS</h2>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <label>Best Distance</label>
-            <span id="stats-best">0m</span>
-          </div>
-          <div class="stat-item">
-            <label>Total Coins</label>
-            <span id="stats-total-coins">0</span>
-          </div>
-          <div class="stat-item">
-            <label>Games Played</label>
-            <span id="stats-games-played">0</span>
-          </div>
-          <div class="stat-item">
-            <label>Total Distance</label>
-            <span id="stats-total-distance">0m</span>
-          </div>
-        </div>
-        <button id="btn-back-stats" class="btn btn-back">BACK</button>
-      </div>
-    </div>
-
-    <!-- HUD en-juego -->
-    <div id="hud-ingame" class="hud-container">
-      <div class="hud-top-left">
-        <div class="stat-box">
-          <label>DISTANCE</label>
-          <span id="hud-distance">0m</span>
-        </div>
-        <div class="stat-box">
-          <label>SPEED</label>
-          <span id="hud-speed">0</span>
-        </div>
-      </div>
-      
-      <div class="hud-top-right">
-        <div class="stat-box">
-          <label>BEST</label>
-          <span id="hud-best">0m</span>
-        </div>
-        <div class="coin-hud">
-          <div class="coin-icon small">💰</div>
-          <span id="hud-coins-earned">+0</span>
-        </div>
-      </div>
-      
-      <div class="hud-center">
-        <div id="hint" class="hint-box">
-          Press <span class="key">A</span> or <span class="key">D</span> to steer
-        </div>
-      </div>
-    </div>
-
-    <!-- Pantalla de Muerte -->
-    <div id="death-screen" class="death-overlay hidden">
-      <div class="death-container">
-        <div class="death-message" id="death-msg">TOO GREEDY</div>
-        
-        <div class="death-stats">
-          <div class="stat-row">
-            <span>Distance</span>
-            <span id="death-distance">0m</span>
-          </div>
-          <div class="stat-row">
-            <span>Coins Earned</span>
-            <span id="death-coins" class="coins">+0</span>
-          </div>
-          <div class="stat-row">
-            <span>Personal Best</span>
-            <span id="death-best">0m</span>
-          </div>
-        </div>
-        
-        <button id="btn-retry" class="btn btn-primary">RETRY</button>
-        <button id="btn-menu" class="btn btn-secondary">MENU</button>
-      </div>
-    </div>
-
-    <!-- Contenedor de juego -->
     <div id="app">
-      <div id="hud" class="hidden" aria-live="polite">
-        <div class="hud-left">
-          <div class="label">DISTANCE</div>
-          <div id="distance" class="value">0</div>
+      <!-- Canvas 3D will be inserted here (always visible) -->
+      
+      <!-- HUD Overlay - always visible during gameplay -->
+      <div id="hud-overlay" class="hud-overlay">
+        <!-- Top Left: Stats -->
+        <div class="hud-top-left">
+          <div class="stat-item">
+            <label>HIGHSCORE</label>
+            <value id="stat-highscore">0M</value>
+          </div>
+          <div class="stat-item">
+            <label>LAST RUN</label>
+            <value id="stat-lastrun">0M</value>
+          </div>
         </div>
-        <div class="hud-right">
-          <div class="label">BEST</div>
-          <div id="best" class="value">0</div>
+        
+        <!-- Center Top: Velocidad -->
+        <div class="hud-center-top">
+          <span id="stat-speed">0</span>
+          <span class="label">KM/H</span>
+        </div>
+        
+        <!-- Bottom Center: Distancia Actual -->
+        <div class="hud-bottom-center">
+          <span id="stat-distance">0M</span>
+        </div>
+        
+        <!-- Bottom Right: Hint -->
+        <div class="hud-bottom-right" id="hint">
+          PRESS <span class="key">A</span> / <span class="key">D</span> TO START
+        </div>
+      </div>
+      
+      <!-- Crash Overlay (appears when you crash) -->
+      <div id="crash-overlay" class="crash-overlay hidden">
+        <div class="crash-container">
+          <!-- Large "TOO GREEDY" message -->
+          <div class="crash-message" id="crash-msg">TOO GREEDY</div>
+          
+          <!-- Stats from the run -->
+          <div class="crash-stats">
+            <div class="crash-stat">
+              <span class="label">DISTANCE</span>
+              <span class="value" id="crash-distance">0M</span>
+            </div>
+            <div class="crash-stat">
+              <span class="label">COINS EARNED</span>
+              <span class="value coins" id="crash-coins">+0</span>
+            </div>
+            <div class="crash-stat">
+              <span class="label">SPEED AT CRASH</span>
+              <span class="value" id="crash-speed">0</span>
+            </div>
+          </div>
+          
+          <!-- Restarting countdown -->
+          <div class="restart-info">
+            <span>RESTARTING IN</span>
+            <span id="restart-timer">3</span>
+          </div>
+          
+          <!-- Buttons (skip restart) -->
+          <div class="crash-buttons">
+            <button id="btn-restart-now" class="btn btn-primary">RESTART NOW (SPACE)</button>
+            <button id="btn-menu-from-crash" class="btn btn-secondary">MENU</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Menu (overlay, initially visible) -->
+      <div id="menu-overlay" class="menu-overlay">
+        <div class="menu-container">
+          <h1 class="game-title">ONE WRONG TURN</h1>
+          <p class="subtitle">Push your limits. One mistake and you're done.</p>
+          
+          <button id="btn-start" class="btn btn-primary big">PLAY</button>
+          <button id="btn-shop" class="btn btn-secondary big">SHOP</button>
+          <button id="btn-stats" class="btn btn-tertiary big">STATS</button>
+          
+          <div class="menu-stats">
+            <div class="stat-item">
+              <label>BEST DISTANCE</label>
+              <value id="menu-best">0M</value>
+            </div>
+            <div class="stat-item">
+              <label>TOTAL COINS</label>
+              <value id="menu-coins">0</value>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Shop Overlay -->
+      <div id="shop-overlay" class="shop-overlay hidden">
+        <div class="shop-container">
+          <h2>CUSTOMIZE YOUR RIDE</h2>
+          
+          <div class="shop-tabs">
+            <button class="tab-btn active" data-tab="skins">SKINS</button>
+            <button class="tab-btn" data-tab="accessories">ACCESSORIES</button>
+          </div>
+          
+          <div class="coin-display shop-coin-display">
+            <div class="coin-icon">💰</div>
+            <span id="shop-coin-count">0</span>
+          </div>
+          
+          <div class="shop-content active" id="shop-skins">
+            <!-- Dynamic skins here -->
+          </div>
+          
+          <div class="shop-content hidden" id="shop-accessories">
+            <!-- Dynamic accessories here -->
+          </div>
+          
+          <button id="btn-back-shop" class="btn btn-back">BACK</button>
         </div>
       </div>
 
-      <div id="center-message" class="center-message hidden">
-        <div id="death-title" class="death-title">CRASH</div>
-        <div id="death-reason" class="death-reason">You turned too late.</div>
-        <button id="restart" class="primary">RESTART</button>
+      <!-- Stats Overlay -->
+      <div id="stats-overlay" class="stats-overlay hidden">
+        <div class="stats-container">
+          <h2>STATS</h2>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <label>Best Distance</label>
+              <span id="stats-best">0m</span>
+            </div>
+            <div class="stat-item">
+              <label>Total Coins</label>
+              <span id="stats-total-coins">0</span>
+            </div>
+            <div class="stat-item">
+              <label>Games Played</label>
+              <span id="stats-games-played">0</span>
+            </div>
+            <div class="stat-item">
+              <label>Total Distance</label>
+              <span id="stats-total-distance">0m</span>
+            </div>
+          </div>
+          <button id="btn-back-stats" class="btn btn-back">BACK</button>
+        </div>
       </div>
 
-      <div id="hint" class="hint">
-        <div class="hint-line"><span class="key">A</span> / <span class="key">←</span> = LEFT</div>
-        <div class="hint-line"><span class="key">D</span> / <span class="key">→</span> = RIGHT</div>
-        <div class="hint-line subtle">One late turn = game over</div>
-      </div>
-
+      <!-- Touch Controls (for mobile) -->
       <div id="touch-controls" class="touch-controls" aria-hidden="true">
         <button id="touch-left" class="touch-btn">LEFT</button>
         <button id="touch-right" class="touch-btn">RIGHT</button>
       </div>
 
+      <!-- Crash flash effect -->
       <div id="crash-flash" class="crash-flash" aria-hidden="true"></div>
-      <div id="fade" class="fade"></div>
     </div>
 
     <script type="module" src="./game/main.js"></script>

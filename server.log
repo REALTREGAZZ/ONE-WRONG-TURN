@@ -1,0 +1,4 @@
+npm warn Unknown env config "python". This will stop working in the next major version of npm.
+Need to install the following packages:
+live-server@1.2.2
+Ok to proceed? (y) 
