@@ -57,20 +57,20 @@ export const CONFIG = {
     },
   },
   difficulty: {
-    // Moderate speed curve for balanced gameplay
+    // Constant speed - no acceleration
     maxDistance: 800,
     speed: {
-      baseSpeed: 25, // Base 25 units/sec (moderate)
-      incrementPerSecond: 0.2, // +1 unit/sec every 5 seconds
-      maxSpeed: 60, // Peak around 60 units/sec
+      baseSpeed: 50, // Constant speed 50 units/sec
+      incrementPerSecond: 0, // No speed increase
+      maxSpeed: 50, // Same as base speed
     }
   },
   car: {
     width: 2.0,
     length: 1.2,
     height: 0.8,
-    baseSpeed: 25,
-    maxSpeed: 60,
+    baseSpeed: 50, // Constant speed
+    maxSpeed: 50, // Same as base speed
 
     steeringRate: 2.0, // Controlled steering
     maxYaw: Math.PI * 0.25, // Bounded maximum turn
