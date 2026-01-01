@@ -103,31 +103,17 @@
       <!-- Shop Overlay -->
       <div id="shop-overlay" class="shop-overlay hidden">
         <div class="shop-container">
-          <h2>CUSTOMIZE YOUR RIDE</h2>
-          
-          <div class="shop-tabs">
-            <button class="tab-btn active" data-tab="vehicles">VEHICLES</button>
-            <button class="tab-btn" data-tab="skins">SKINS</button>
-            <button class="tab-btn" data-tab="accessories">ACCESSORIES</button>
-          </div>
-          
+          <h2>SKINS</h2>
+
           <div class="coin-display shop-coin-display">
             <div class="coin-icon">💰</div>
             <span id="shop-coin-count">0</span>
           </div>
-          
-          <div class="shop-content active" id="shop-vehicles">
-            <!-- Dynamic vehicles here -->
-          </div>
-          
-          <div class="shop-content hidden" id="shop-skins">
+
+          <div class="shop-content active" id="shop-skins">
             <!-- Dynamic skins here -->
           </div>
-          
-          <div class="shop-content hidden" id="shop-accessories">
-            <!-- Dynamic accessories here -->
-          </div>
-          
+
           <button id="btn-back-shop" class="btn btn-back">BACK</button>
         </div>
       </div>
@@ -169,14 +155,6 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="./game/loaders/GLTFLoader.js"></script>
-    <script>
-      // Ensure GLTFLoader is available globally
-      if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
-        window.GLTFLoader = THREE.GLTFLoader;
-      }
-    </script>
-
     <script type="module" src="./game/main.js"></script>
   </body>
 </html>

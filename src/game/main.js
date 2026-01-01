@@ -14,8 +14,6 @@ import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
 import { CoinSystem } from './coinSystem.js';
 import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
-import { RampSystem } from './ramps.js';
-import { VehicleSystem } from './vehicleSystem.js';
 
 const app = document.getElementById('app');
 
@@ -122,21 +120,6 @@ const audio = new AudioManager();
 const world = new World(scene, CONFIG);
 const car = new Car(CONFIG);
 
-// NEW CLEAN VEHICLE SYSTEM - Load model with real measurements
-const vehicleSystem = new VehicleSystem();
-async function loadVehicleModel() {
-  try {
-    console.log('Loading vehicle with new clean system...');
-    await vehicleSystem.loadModel(car, scene);
-    console.log('Vehicle loaded and ready');
-  } catch (error) {
-    console.error('Failed to load vehicle:', error);
-  }
-}
-
-// Initialize vehicle loading
-loadVehicleModel();
-
 scene.add(car.group);
 
 const followCamera = new FollowCamera(camera, CONFIG.camera);
@@ -151,7 +134,6 @@ let lastTs = performance.now();
 let lastGrazeTime = 0;
 const GRAZE_COOLDOWN = 0.08;
 let mode = 'menu'; // 'menu' | 'playing' | 'crashed' | 'shop' | 'stats'
-let isPaused = false;
 let freezeT = 0;
 let showDeathAfterFreeze = false;
 let distance = 0;
@@ -173,7 +155,6 @@ let pointerSteerT = 0;
 
 const coinSystem = new CoinSystem();
 const shopSystem = new ShopSystem(coinSystem);
-const rampSystem = new RampSystem(scene);
 
 // Guardar SHOP_ITEMS en CONFIG para acceso global
 CONFIG.SHOP_ITEMS = SHOP_ITEMS;
@@ -205,69 +186,39 @@ function updateCoinDisplays() {
 
 // Renderizar tienda
 function renderShop() {
-  const vehiclesContainer = document.getElementById('shop-vehicles');
   const skinsContainer = document.getElementById('shop-skins');
-  const accessoriesContainer = document.getElementById('shop-accessories');
-  
-  if (!vehiclesContainer || !skinsContainer || !accessoriesContainer) return;
-  
-  // Limpiar contenedores
-  vehiclesContainer.innerHTML = '';
+
+  if (!skinsContainer) return;
+
+  // Clear container
   skinsContainer.innerHTML = '';
-  accessoriesContainer.innerHTML = '';
-  
-  // Renderizar vehicles
-  SHOP_ITEMS.vehicles.forEach(vehicle => {
-    const itemEl = createShopItem(vehicle, 'vehicle');
-    vehiclesContainer.appendChild(itemEl);
-  });
-  
-  // Renderizar skins
+
+  // Render skins
   SHOP_ITEMS.skins.forEach(skin => {
-    const itemEl = createShopItem(skin, 'skin');
+    const itemEl = createShopItem(skin);
     skinsContainer.appendChild(itemEl);
-  });
-  
-  // Renderizar accesorios
-  SHOP_ITEMS.accessories.forEach(accessory => {
-    const itemEl = createShopItem(accessory, 'accessory');
-    accessoriesContainer.appendChild(itemEl);
   });
 }
 
-function createShopItem(item, type) {
+function createShopItem(item) {
   const itemEl = document.createElement('div');
   itemEl.className = 'shop-item';
-  
-  const isSelected = type === 'vehicle' ? shopSystem.selectedVehicle === item.id :
-                     type === 'skin' ? shopSystem.selectedSkin === item.id : 
-                     shopSystem.isAccessoryActive(item.id);
+
+  const isSelected = shopSystem.selectedSkin === item.id;
   const isOwned = item.owned;
-  
+
   if (isSelected) itemEl.classList.add('selected');
   if (isOwned) itemEl.classList.add('owned');
-  
+
   itemEl.innerHTML = `
     <div class="item-name">${item.name}</div>
     <div class="item-description">${item.description}</div>
     <div class="item-price ${isOwned ? 'owned' : ''}">${isOwned ? 'OWNED' : item.price}</div>
   `;
-  
+
   itemEl.addEventListener('click', async () => {
     if (isOwned) {
-      if (type === 'vehicle') {
-        // DISABLED FOR NOW - Shop system not compatible with new vehicle system
-        console.log('Vehicle selection disabled in new system');
-        shopSystem.selectVehicle(item.id);
-      } else if (type === 'skin') {
-        // DISABLED FOR NOW
-        console.log('Skin selection disabled in new system');
-        shopSystem.applySkin(item.id);
-      } else {
-        // DISABLED FOR NOW
-        console.log('Accessory selection disabled in new system');
-        shopSystem.toggleAccessory(item.id);
-      }
+      shopSystem.applySkin(item.id);
       renderShop();
     } else {
       if (coinSystem.getTotal() >= item.price) {
@@ -277,7 +228,7 @@ function createShopItem(item, type) {
       }
     }
   });
-  
+
   return itemEl;
 }
 
@@ -323,31 +274,30 @@ function currentSpeed() {
 
 function crash() {
   if (mode !== 'playing') return;
-  
+
   mode = 'crashed';
   freezeT = CONFIG.crash.freezeSeconds;
   showDeathAfterFreeze = true;
   hintT = 0;
-  
-  const multiplier = rampSystem.getMultiplier();
-  const earned = coinSystem.earnCoins(distance) * multiplier;
+
+  const earned = coinSystem.earnCoins(distance);
   gamesPlayed++;
   totalDistance += distance;
   lastRun = distance;
-  
+
   if (distance > best) {
     best = distance;
     localStorage.setItem('owt_best', String(best));
   }
-  
+
   localStorage.setItem('owt_games_played', String(gamesPlayed));
   localStorage.setItem('owt_total_distance', String(totalDistance));
-  
+
   audio.playCrash();
   followCamera.startCrashShake();
   crashFlash();
   crashDebris.spawn(car.group.position, camera.position);
-  
+
   gameplayStop();
 }
 
@@ -379,9 +329,9 @@ async function completeRestart() {
   sparks.reset();
   crashDebris.reset();
 
-  // SKIN/ACCESSORY SYSTEM DISABLED FOR NOW - Clean vehicle system
-  // const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
-  // const selectedAccessories = shopSystem?.selectedAccessories || [];
+  // Apply selected skin
+  const selectedSkin = shopSystem?.selectedSkin || 'red';
+  car.applySkin(selectedSkin);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -406,9 +356,9 @@ async function startRun() {
   sparks.reset();
   crashDebris.reset();
 
-  // SKIN/ACCESSORY SYSTEM DISABLED FOR NOW - Clean vehicle system
-  // const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
-  // const selectedAccessories = shopSystem?.selectedAccessories || [];
+  // Apply selected skin
+  const selectedSkin = shopSystem?.selectedSkin || 'red';
+  car.applySkin(selectedSkin);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -496,23 +446,6 @@ document.getElementById('btn-back-stats')?.addEventListener('click', () => {
   showMenu();
 });
 
-// Tabs de tienda
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.tab;
-    
-    // Actualizar tabs activos
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    // Mostrar contenido correspondiente
-    document.querySelectorAll('.shop-content').forEach(content => {
-      content.classList.add('hidden');
-    });
-    document.getElementById(`shop-${tab}`).classList.remove('hidden');
-  });
-});
-
 renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
 function frame(ts) {
@@ -562,29 +495,6 @@ function frame(ts) {
 
     world.update(distance);
 
-    // ACTUALIZAR RAMPAS Y DETECTAR COLISIÓN
-    const roadInfo = world.sampleRoad(distance);
-    rampSystem.update(
-      car.group.position,
-      speed,
-      distance,
-      roadInfo.width,
-      roadInfo.centerX,
-      () => {
-        isPaused = true;
-        car.jump(15); // Trigger physics jump
-        rampSystem.showMultiplierWheel((selectedMult) => {
-          rampSystem.activateMultiplier(selectedMult);
-          isPaused = false;
-        });
-      }
-    );
-
-    // Sync car in air state with ramp system
-    if (rampSystem.isCarInAir() && !car.isInAir) {
-      car.jump(rampSystem.getVerticalVelocity());
-    }
-
     const road = world.sampleRoad(distance);
     const collision = checkWallCollision(car, road);
 
@@ -608,9 +518,6 @@ function frame(ts) {
 
     followCamera.updateVelocityShake(dtRaw, speed, CONFIG.difficulty.speed.maxSpeed);
     followCamera.update(dtRaw, car.group, speedRatio);
-  } else if (mode === 'playing' && isPaused) {
-    // Renderear sin actualizar simulación si está pausado por rampa
-    followCamera.update(dtRaw, car.group, 0);
   } else {
     followCamera.update(dtRaw, car.group, 0);
     wheelTrails.update(simDt, car, 0, CONFIG.difficulty.speed.maxSpeed);
