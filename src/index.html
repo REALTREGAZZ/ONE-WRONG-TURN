@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONE WRONG TURN</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main Menu -->
+    <div id="mainMenu" class="screen active">
+        <div class="title-container">
+            <h1 class="game-title">ONE WRONG TURN</h1>
+        </div>
+        <div class="menu-buttons">
+            <button class="btn-primary" onclick="Game.startGame()">PLAY</button>
+            <button class="btn-secondary" onclick="Game.showShop()">SHOP</button>
+            <button class="btn-secondary" onclick="Game.showSettings()">SETTINGS</button>
+            <button class="btn-secondary" onclick="Game.showCredits()">CREDITS</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div id="gameHUD">
+            <div class="hud-item">
+                <span class="hud-label">DISTANCE:</span>
+                <span id="distanceDisplay" class="hud-value">0</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">COINS:</span>
+                <span id="coinsDisplay" class="hud-value">0</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">SPEED:</span>
+                <span id="speedDisplay" class="hud-value">50</span>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Death Screen -->
+    <div id="deathScreen" class="screen">
+        <div class="death-content">
+            <h2 id="deathMessage" class="death-message">YOU TURNED TOO LATE</h2>
+            <div class="death-stats">
+                <p>DISTANCE: <span id="finalDistance">0</span></p>
+                <p>COINS EARNED: <span id="coinsEarned">0</span></p>
+            </div>
+            <button class="btn-primary" onclick="Game.retry()">RETRY</button>
+        </div>
+    </div>
+
+    <!-- Shop Screen -->
+    <div id="shopScreen" class="screen">
+        <div class="shop-header">
+            <h2>CAR SKINS</h2>
+            <div class="coins-display">
+                COINS: <span id="shopCoins">0</span>
+            </div>
+        </div>
+        <div id="skinsList" class="skins-grid"></div>
+        <button class="btn-secondary" onclick="Game.showMainMenu()">BACK</button>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settingsScreen" class="screen">
+        <h2>SETTINGS</h2>
+        <div class="setting-item">
+            <label for="audioToggle">AUDIO:</label>
+            <button id="audioToggle" class="toggle-btn" onclick="Game.toggleAudio()">ON</button>
+        </div>
+        <div class="setting-item">
+            <label for="volumeSlider">VOLUME:</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="50" onchange="Game.changeVolume(this.value)">
+            <span id="volumeValue">50</span>
+        </div>
+        <button class="btn-secondary" onclick="Game.showMainMenu()">BACK</button>
+    </div>
+
+    <!-- Credits Screen -->
+    <div id="creditsScreen" class="screen">
+        <h2>CREDITS</h2>
+        <div class="credits-content">
+            <p>ONE WRONG TURN</p>
+            <p>A Synthwave Driving Game</p>
+            <p>Built with Three.js</p>
+            <p>Ready for Poki Integration</p>
+        </div>
+        <button class="btn-secondary" onclick="Game.showMainMenu()">BACK</button>
+    </div>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Game Modules -->
+    <script type="module" src="game/config.js"></script>
+    <script type="module" src="game/audioManager.js"></script>
+    <script type="module" src="game/storageManager.js"></script>
+    <script type="module" src="game/uiManager.js"></script>
+    <script type="module" src="game/car.js"></script>
+    <script type="module" src="game/world.js"></script>
+    <script type="module" src="game/inputManager.js"></script>
+    <script type="module" src="game/gameLogic.js"></script>
+    <script type="module" src="game/main.js"></script>
+    
+    <!-- Game Controller -->
+    <script>
+        // Global Game Controller
+        window.Game = {
+            state: 'menu',
+            coins: 0,
+            unlockedSkins: ['red'],
+            equippedSkin: 'red',
+            audioEnabled: true,
+            volume: 0.5,
+            distance: 0,
+            speed: 50,
+            timeScale: 1.0,
+            
+            showMainMenu() {
+                this.hideAllScreens();
+                document.getElementById('mainMenu').classList.add('active');
+                this.state = 'menu';
+            },
+            
+            showShop() {
+                this.hideAllScreens();
+                document.getElementById('shopScreen').classList.add('active');
+                this.state = 'shop';
+                this.updateShopDisplay();
+            },
+            
+            showSettings() {
+                this.hideAllScreens();
+                document.getElementById('settingsScreen').classList.add('active');
+                this.state = 'settings';
+                this.updateSettingsDisplay();
+            },
+            
+            showCredits() {
+                this.hideAllScreens();
+                document.getElementById('creditsScreen').classList.add('active');
+                this.state = 'credits';
+            },
+            
+            hideAllScreens() {
+                const screens = document.querySelectorAll('.screen');
+                screens.forEach(screen => screen.classList.remove('active'));
+            },
+            
+            startGame() {
+                this.hideAllScreens();
+                document.getElementById('gameScreen').classList.add('active');
+                this.state = 'playing';
+                this.distance = 0;
+                this.updateHUD();
+                if (window.main && window.main.startGame) {
+                    window.main.startGame();
+                }
+                // showInterstitialAd(); // Ready for Poki
+            },
+            
+            retry() {
+                this.showMainMenu();
+            },
+            
+            showDeathScreen() {
+                this.hideAllScreens();
+                document.getElementById('deathScreen').classList.add('active');
+                this.state = 'death';
+                this.updateDeathDisplay();
+                // showInterstitialAd(); // Ready for Poki
+                setTimeout(() => {
+                    if (this.state === 'death') {
+                        this.retry();
+                    }
+                }, 300);
+            },
+            
+            updateHUD() {
+                document.getElementById('distanceDisplay').textContent = Math.floor(this.distance);
+                document.getElementById('coinsDisplay').textContent = this.coins;
+                document.getElementById('speedDisplay').textContent = this.speed;
+            },
+            
+            updateDeathDisplay() {
+                document.getElementById('finalDistance').textContent = Math.floor(this.distance);
+                document.getElementById('coinsEarned').textContent = Math.floor(this.distance);
+                const messages = ['YOU TURNED TOO LATE', 'TOO GREEDY', 'YOU HESITATED', 'ALMOST'];
+                document.getElementById('deathMessage').textContent = messages[Math.floor(Math.random() * messages.length)];
+            },
+            
+            updateShopDisplay() {
+                document.getElementById('shopCoins').textContent = this.coins;
+                const skinsList = document.getElementById('skinsList');
+                skinsList.innerHTML = '';
+                
+                Object.entries(window.config.SHOP_ITEMS).forEach(([skinId, skin]) => {
+                    const skinElement = document.createElement('div');
+                    skinElement.className = 'skin-item';
+                    
+                    const colorBox = document.createElement('div');
+                    colorBox.className = 'skin-color';
+                    colorBox.style.backgroundColor = skin.color;
+                    
+                    const skinInfo = document.createElement('div');
+                    skinInfo.className = 'skin-info';
+                    
+                    const skinName = document.createElement('h3');
+                    skinName.textContent = skin.name;
+                    
+                    const skinPrice = document.createElement('p');
+                    skinPrice.textContent = `${skin.price} COINS`;
+                    
+                    const skinButton = document.createElement('button');
+                    if (this.unlockedSkins.includes(skinId)) {
+                        if (this.equippedSkin === skinId) {
+                            skinButton.textContent = 'EQUIPPED';
+                            skinButton.disabled = true;
+                        } else {
+                            skinButton.textContent = 'EQUIP';
+                            skinButton.onclick = () => this.equipSkin(skinId);
+                        }
+                    } else {
+                        skinButton.textContent = 'BUY';
+                        skinButton.onclick = () => this.buySkin(skinId);
+                        if (this.coins < skin.price) {
+                            skinButton.disabled = true;
+                        }
+                    }
+                    
+                    skinInfo.appendChild(skinName);
+                    skinInfo.appendChild(skinPrice);
+                    skinInfo.appendChild(skinButton);
+                    
+                    skinElement.appendChild(colorBox);
+                    skinElement.appendChild(skinInfo);
+                    skinsList.appendChild(skinElement);
+                });
+            },
+            
+            buySkin(skinId) {
+                const skin = window.config.SHOP_ITEMS[skinId];
+                if (this.coins >= skin.price && !this.unlockedSkins.includes(skinId)) {
+                    this.coins -= skin.price;
+                    this.unlockedSkins.push(skinId);
+                    window.storageManager.saveData();
+                    window.audioManager.playSound('purchase');
+                    this.updateShopDisplay();
+                }
+            },
+            
+            equipSkin(skinId) {
+                if (this.unlockedSkins.includes(skinId)) {
+                    this.equippedSkin = skinId;
+                    window.storageManager.saveData();
+                    this.updateShopDisplay();
+                    if (window.main && window.main.updateCarSkin) {
+                        window.main.updateCarSkin();
+                    }
+                }
+            },
+            
+            toggleAudio() {
+                this.audioEnabled = !this.audioEnabled;
+                window.audioManager.setEnabled(this.audioEnabled);
+                this.updateSettingsDisplay();
+                window.storageManager.saveData();
+            },
+            
+            changeVolume(value) {
+                this.volume = value / 100;
+                window.audioManager.setVolume(this.volume);
+                document.getElementById('volumeValue').textContent = value;
+                window.storageManager.saveData();
+            },
+            
+            updateSettingsDisplay() {
+                document.getElementById('audioToggle').textContent = this.audioEnabled ? 'ON' : 'OFF';
+                document.getElementById('volumeSlider').value = this.volume * 100;
+                document.getElementById('volumeValue').textContent = Math.floor(this.volume * 100);
+            }
+        };
+        
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.storageManager.loadData();
+            Game.updateSettingsDisplay();
+            Game.updateShopDisplay();
+        });
+        
+        // Poki SDK ready (stub)
+        function gameReady() {
+            console.log('Poki SDK: Game Ready');
+        }
+        
+        function gameStart() {
+            console.log('Poki SDK: Game Start');
+        }
+        
+        function gameEnd() {
+            console.log('Poki SDK: Game End');
+        }
+        
+        function showInterstitialAd() {
+            console.log('Poki SDK: Show Interstitial Ad (stub)');
+        }
+    </script>
+</body>
+</html>
