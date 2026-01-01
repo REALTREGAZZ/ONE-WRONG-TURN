@@ -78,30 +78,44 @@ scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
 
-// Reactive synthwave lighting system
-scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+// Professional lighting system for GLTF model visibility
+// Enhanced ambient light for better overall visibility
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
 
-// Cyan point light (left side)
+// Cyan point light (left side) - increased intensity
 const cyanCfg = CONFIG.synthwave.lights.pointLights.cyan;
-const cyanLight = new THREE.PointLight(cyanCfg.color, 1.5, cyanCfg.distance);
-cyanLight.position.set(-4, 3, 2);
+const cyanLight = new THREE.PointLight(cyanCfg.color, 2.5, 80);
+cyanLight.position.set(-4, 4, 5);
 scene.add(cyanLight);
 
-// Magenta point light (right side)
+// Magenta point light (right side) - increased intensity
 const magentaCfg = CONFIG.synthwave.lights.pointLights.magenta;
-const magentaLight = new THREE.PointLight(magentaCfg.color, 1.5, magentaCfg.distance);
-magentaLight.position.set(4, 3, 2);
+const magentaLight = new THREE.PointLight(magentaCfg.color, 2.5, 80);
+magentaLight.position.set(4, 4, 5);
 scene.add(magentaLight);
 
-// Directional sun (for definition)
-const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-sun.position.set(5, 12, -4);
+// Main directional sun (for definition and shadows)
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(5, 15, -5);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 1024;
+sun.shadow.mapSize.height = 1024;
 scene.add(sun);
 
 // Fill light for better form definition
-const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
-fillLight.position.set(-5, 5, -4);
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+fillLight.position.set(-5, 8, -3);
 scene.add(fillLight);
+
+// Rim light (back light) for dramatic effect on car
+const rimLight = new THREE.DirectionalLight(0x00ffff, 0.8);
+rimLight.position.set(0, 5, -10);
+scene.add(rimLight);
+
+// Hemisphere light for natural outdoor lighting
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
+scene.add(hemiLight);
 
 const audio = new AudioManager();
 
@@ -589,8 +603,9 @@ function frame(ts) {
     // Update light pulse effect based on speed
     pulseTime += dtRaw * 3;
     const pulseFactor = 0.8 + Math.sin(pulseTime) * 0.2;
-    cyanLight.intensity = cyanCfg.intensity * pulseFactor;
-    magentaLight.intensity = magentaCfg.intensity * pulseFactor;
+    const baseIntensity = cyanCfg.intensity || 2.5; // Use configured intensity or default
+    cyanLight.intensity = baseIntensity * pulseFactor;
+    magentaLight.intensity = baseIntensity * pulseFactor;
 
     car.update(simDt, steer, speed);
     distance = car.group.position.z;

@@ -17,6 +17,11 @@ export class FollowCamera {
 
     this._tmp = new THREE.Vector3();
     this._desired = new THREE.Vector3();
+
+    // Third person camera parameters
+    this._thirdPersonOffset = new THREE.Vector3(0, 1.5, -2.5); // Behind and above car
+    this._thirdPersonSmoothness = 10; // Higher = faster follow
+    this._currentCameraOffset = new THREE.Vector3();
   }
 
   startCrashShake() {
@@ -47,14 +52,33 @@ export class FollowCamera {
     this.camera.position.sub(this._lastShake);
     this._lastShake.set(0, 0, 0);
 
-    this._desired.set(target.position.x, this.params.height, target.position.z - this.params.distance);
+    // Third person camera follow - professional implementation
+    // Calculate desired camera position behind and above the car
+    const carRotation = target.rotation.y;
+    const forwardDir = new THREE.Vector3(Math.sin(carRotation), 0, Math.cos(carRotation));
 
-    const alpha = 1 - Math.exp(-this.params.smoothness * dt);
-    this.camera.position.lerp(this._desired, alpha);
+    // Third person offset is relative to car's forward direction
+    // Offset is behind (-Z) and up (+Y)
+    const behindDir = forwardDir.clone().multiplyScalar(-1);
+    const offsetPosition = behindDir.multiplyScalar(this._thirdPersonOffset.z);
 
-    this._tmp.set(target.position.x, 0.8, target.position.z + this.params.lookAhead);
+    // Add height offset
+    offsetPosition.y = this._thirdPersonOffset.y;
+
+    // Smooth lerp for camera position (no vibration)
+    const desiredPosition = target.position.clone().add(offsetPosition);
+    const alpha = 1 - Math.exp(-this._thirdPersonSmoothness * dt);
+    this.camera.position.lerp(desiredPosition, alpha);
+
+    // Camera look-at point: slightly ahead of the car
+    const lookAtOffset = forwardDir.multiplyScalar(this.params.lookAhead);
+    const lookAtPoint = target.position.clone().add(lookAtOffset);
+    lookAtPoint.y = 0.8; // Slightly above car center
+
+    this._tmp.copy(lookAtPoint);
     this.camera.lookAt(this._tmp);
 
+    // Dynamic FOV based on speed
     const targetFov = this.params.fov.base + (this.params.fov.max - this.params.fov.base) * speedRatio;
     this.camera.fov = lerp(this.camera.fov, targetFov, this.params.fov.lerpFactor);
     this.camera.updateProjectionMatrix();

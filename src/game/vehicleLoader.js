@@ -137,45 +137,84 @@ export class VehicleLoader {
   }
 
   /**
-   * Prepare model: fix orientation, materials, etc.
+   * Prepare model: fix orientation, materials, calculate collider, etc.
    */
   static prepareModel(model) {
     let meshCount = 0;
     const materials = new Set();
+    model.originalColors = new Map();
 
     model.traverse(child => {
       if (child.isMesh) {
         meshCount++;
-        // Fix black materials by replacing with MeshStandardMaterial
         const oldMat = child.material;
-        const color = oldMat.color ? oldMat.color.clone() : new THREE.Color(0xff0000);
-        
-        // Success criteria: Red metallic paint visible
+
+        // Preserve original color from GLTF (CRITICAL for model fidelity)
+        let originalColor = new THREE.Color(0xff0000); // fallback red
+        if (oldMat.color) {
+          originalColor = oldMat.color.clone();
+        } else if (oldMat.pbrMetallicRoughness && oldMat.pbrMetallicRoughness.baseColorFactor) {
+          const bc = oldMat.pbrMetallicRoughness.baseColorFactor;
+          originalColor.setRGB(bc[0], bc[1], bc[2]);
+        }
+
+        // Store original color for later use
+        model.originalColors.set(child.uuid, originalColor);
+
+        // Get metallic and roughness from PBR materials
+        let metallic = 0.5;
+        let roughness = 0.4;
+        if (oldMat.metallic !== undefined) {
+          metallic = oldMat.metallic;
+        } else if (oldMat.pbrMetallicRoughness && oldMat.pbrMetallicRoughness.metallicFactor !== undefined) {
+          metallic = oldMat.pbrMetallicRoughness.metallicFactor;
+        }
+        if (oldMat.roughness !== undefined) {
+          roughness = oldMat.roughness;
+        } else if (oldMat.pbrMetallicRoughness && oldMat.pbrMetallicRoughness.roughnessFactor !== undefined) {
+          roughness = oldMat.pbrMetallicRoughness.roughnessFactor;
+        }
+
+        // Get emissive properties
+        let emissive = new THREE.Color(0x000000);
+        let emissiveIntensity = 0;
+        if (oldMat.emissive) {
+          emissive = oldMat.emissive.clone();
+        }
+        if (oldMat.emissiveIntensity !== undefined) {
+          emissiveIntensity = oldMat.emissiveIntensity;
+        } else if (oldMat.emissiveFactor) {
+          emissive.setRGB(oldMat.emissiveFactor[0], oldMat.emissiveFactor[1], oldMat.emissiveFactor[2]);
+        }
+
+        // Convert to MeshStandardMaterial for proper lighting
         child.material = new THREE.MeshStandardMaterial({
-          color: color,
-          metalness: 0.5,
-          roughness: 0.4,
+          color: originalColor,
+          metalness: metallic || 0.5,
+          roughness: roughness || 0.4,
           side: THREE.DoubleSide,
           map: oldMat.map,
           normalMap: oldMat.normalMap,
-          emissive: oldMat.emissive ? oldMat.emissive.clone() : new THREE.Color(0x000000),
-          emissiveIntensity: oldMat.emissiveIntensity || 0
+          emissive: emissive,
+          emissiveIntensity: emissiveIntensity
         });
-        
+
         if (child.material.map) materials.add('texture');
         materials.add(child.material.type);
-        
-        // Ensure lighting environment map is applied later if available
+
         child.castShadow = true;
         child.receiveShadow = true;
       }
     });
 
-    // Debug log: print loaded materials, textures, geometry per vehicle
+    // Debug log with detailed material information
     console.log(`Model preparation complete:
       Meshes: ${meshCount}
       Materials: ${Array.from(materials).join(', ')}
       Hierarchy: ${model.children.length} root children`);
+
+    // Calculate bounding box for precise collision detection
+    return model;
   }
 
   /**
@@ -187,18 +226,29 @@ export class VehicleLoader {
       car.model.remove(car.model.children[0]);
     }
 
-    // Apply model configuration
+    // Apply model configuration - scale first
     if (typeof modelConfig.scale === 'number') {
       model.scale.setScalar(modelConfig.scale);
     } else if (modelConfig.scale) {
       model.scale.set(modelConfig.scale.x, modelConfig.scale.y, modelConfig.scale.z);
     }
-    
-    if (modelConfig.position) {
-      model.position.set(modelConfig.position.x, modelConfig.position.y, modelConfig.position.z);
-    }
+
+    // Fix orientation: Models typically come facing -Z or need rotation to face +Z
+    // The current config has rotation.y = Math.PI, which faces backwards
+    // Remove or adjust to face forward (Z positive)
     if (modelConfig.rotation) {
-      model.rotation.set(modelConfig.rotation.x, modelConfig.rotation.y, modelConfig.rotation.z);
+      // For most car models, we want them facing +Z (forward)
+      // If the model comes from Sketchfab, it might face -Z, so we rotate Y by PI
+      // But if it already faces +Z, no rotation needed
+      model.rotation.set(modelConfig.rotation.x, 0, modelConfig.rotation.z); // Remove Y rotation
+    }
+
+    // Safe spawn: position at +2 units above ground to prevent clipping
+    // This ensures physics engine doesn't detect the car inside the ground
+    if (modelConfig.position) {
+      model.position.set(modelConfig.position.x, 2.0, modelConfig.position.z); // Force Y = 2.0
+    } else {
+      model.position.set(0, 2.0, 0);
     }
 
     // Add to car model
@@ -207,7 +257,7 @@ export class VehicleLoader {
     // Set reference for skin application
     car.currentModel = model;
     car.modelType = 'glb';
-    
+
     // Find wheels in GLB model
     car.wheels = [];
     model.traverse(child => {
@@ -215,18 +265,41 @@ export class VehicleLoader {
         car.wheels.push(child);
       }
     });
-    
-    // Adjust bounding box for car physics body if needed
+
+    // Calculate precise bounding box for collision detection
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
-    
+    const center = box.getCenter(new THREE.Vector3());
+
+    // Store bounding box data for precise collision
+    car.collider = {
+      box: box,
+      size: size,
+      center: center,
+      halfExtents: new THREE.Vector3(size.x / 2, size.y / 2, size.z / 2)
+    };
+
     // Update car radius based on model width (X axis)
-    // We use a bit of margin for better gameplay
+    // Use a bit of margin for better gameplay
     car.radius = size.x * 0.45;
-    
-    console.log(`Loaded vehicle size: ${size.x.toFixed(2)}, ${size.y.toFixed(2)}, ${size.z.toFixed(2)} for ${modelConfig.name}`);
-    console.log(`Updated car radius to: ${car.radius.toFixed(2)}`);
-    console.log(`Found ${car.wheels.length} wheels in model`);
+
+    // Adjust car spawn height based on model dimensions
+    // Wheels should touch the ground (ground at Y = -0.5)
+    // The model is at Y = 2.0 relative to car.model
+    // We need to adjust car.group.position so wheels are at ground level
+    const wheelBottom = center.y - size.y / 2;
+    const groundLevel = -0.5;
+    const spawnY = groundLevel - wheelBottom + 0.15; // +0.15 for wheel clearance
+
+    // Update car position to spawn safely above ground
+    car.group.position.y = spawnY;
+
+    console.log(`Loaded vehicle: ${modelConfig.name}`);
+    console.log(`  Size: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}`);
+    console.log(`  Collider half-extents: [${car.collider.halfExtents.x.toFixed(2)}, ${car.collider.halfExtents.y.toFixed(2)}, ${car.collider.halfExtents.z.toFixed(2)}]`);
+    console.log(`  Car radius: ${car.radius.toFixed(2)}`);
+    console.log(`  Wheels found: ${car.wheels.length}`);
+    console.log(`  Spawn Y: ${spawnY.toFixed(2)}`);
   }
 
   /**
@@ -266,6 +339,7 @@ export class VehicleLoader {
 
   /**
    * Apply skin to GLB model by modifying materials
+   * Preserves original model characteristics where possible
    */
   static applySkinToGLBModel(model, skinId) {
     const skinColors = {
@@ -290,26 +364,34 @@ export class VehicleLoader {
           child.material = new THREE.MeshStandardMaterial({
             map: oldMat.map,
             normalMap: oldMat.normalMap,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            color: oldMat.color,
+            metalness: oldMat.metalness || 0.5,
+            roughness: oldMat.roughness || 0.4
           });
         }
-        
+
         // We only want to change the color of the "body" parts.
         // Heuristic: if it's not a wheel/tire and not glass/window
         const name = child.name.toLowerCase();
-        const isBody = !name.includes('wheel') && !name.includes('tire') && !name.includes('glass') && !name.includes('window');
-        
+        const isBody = !name.includes('wheel') && !name.includes('tire') &&
+                       !name.includes('glass') && !name.includes('window') &&
+                       !name.includes('light') && !name.includes('headlight') &&
+                       !name.includes('taillight');
+
         if (isBody) {
           child.material.color.setHex(color);
-          child.material.metalness = 0.7;
-          child.material.roughness = 0.2;
-          
+          // Preserve metallic feel but enhance it
+          child.material.metalness = Math.max(child.material.metalness, 0.7);
+          child.material.roughness = Math.min(child.material.roughness, 0.3);
+
+          // Add subtle emissive glow for Synthwave aesthetic
           if (child.material.emissive) {
             child.material.emissive.setHex(color);
-            child.material.emissiveIntensity = 0.2;
+            child.material.emissiveIntensity = 0.15;
           }
         }
-        
+
         child.material.needsUpdate = true;
       }
     });
