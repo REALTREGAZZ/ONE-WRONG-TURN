@@ -1,5 +1,6 @@
 // Using global THREE from CDN - no import needed
 import { clamp, lerp } from './helpers.js';
+import { VehicleSpawner } from './vehicleSpawner.js';
 
 export class Car {
   constructor(config) {
@@ -8,56 +9,65 @@ export class Car {
 
     this.group = new THREE.Group();
 
-    // The car model group (for visual parts)
     this.model = new THREE.Group();
     this.group.add(this.model);
 
-    // Property for active accessories (disabled)
-    // this.activeAccessories = [];
-
-    // Initialize wheels array
     this.wheels = [];
-
-    // Create procedural vehicle
-    this.createProceduralVehicle();
+    this.vehicleSpawner = new VehicleSpawner(null, config);
 
     this.yaw = 0;
     this.speed = this.config.baseSpeed;
     this.distance = 0;
 
-    // Physics properties
     this.velocity = new THREE.Vector3();
     this.steering = 0;
 
-    // Steering physics
-    this.wheelBase = 1.2; // Distance between front and rear axles
+    this.wheelBase = 1.2;
     this.steeringAngle = 0;
-    this.maxSteeringAngle = Math.PI / 6; // 30 degrees
-
-    // Collision margin (radius should be slightly less than half of car width X = 2.0)
+    this.maxSteeringAngle = Math.PI / 6;
     this.radius = (this.config.width || 2.0) * 0.45;
+
+    this.loadVehicleModel();
   }
 
-  /**
-   * Create the procedural vehicle (simple box)
-   */
+  async loadVehicleModel() {
+    try {
+      const vehicleModel = await this.vehicleSpawner.loadVehicle(
+        '/src/assets/models/low_poly/scene.gltf'
+      );
+
+      while (this.model.children.length > 0) {
+        this.model.remove(this.model.children[0]);
+      }
+
+      this.model.add(vehicleModel);
+      this.enforceGroundPosition();
+    } catch (error) {
+      console.error('Failed to load vehicle model:', error);
+      this.createProceduralVehicle();
+    }
+  }
+
+  enforceGroundPosition() {
+    if (this.group.position.y < 2.05) {
+      this.group.position.y = 2.0;
+    }
+  }
+
   createProceduralVehicle() {
-    // Clear existing model
     while (this.model.children.length > 0) {
       this.model.remove(this.model.children[0]);
     }
 
-    // Simple box car (red by default)
     const carGeo = new THREE.BoxGeometry(2.0, 0.8, 1.2);
     const carMat = new THREE.MeshStandardMaterial({
-      color: 0xFF0000, // Red
+      color: 0xFF0000,
       roughness: 0.3,
-      metalness: 0.5,
+      metalness: 0.6,
     });
     this.chassis = new THREE.Mesh(carGeo, carMat);
     this.model.add(this.chassis);
 
-    // Simple wheels (4 boxes for simplicity)
     this.wheels = [];
     const wheelGeo = new THREE.BoxGeometry(0.25, 0.3, 0.3);
     const wheelMat = new THREE.MeshStandardMaterial({
@@ -85,9 +95,7 @@ export class Car {
     this.yaw = 0;
     this.speed = this.config.baseSpeed;
     this.distance = 0;
-
-    // Reset position
-    this.group.position.set(0, 0.55, 0);
+    this.group.position.set(0, 2.0, 0);
     this.group.rotation.set(0, 0, 0);
   }
 
@@ -95,28 +103,25 @@ export class Car {
     this.speed = speed;
     this.distance += this.speed * dt;
 
-    // Smooth steering
     const targetSteering = steer * (this.config.steeringRate || 2.0);
     this.steering = lerp(this.steering, targetSteering, dt * 8);
 
-    // Calculate steering angle
     this.steeringAngle = this.steering * this.maxSteeringAngle;
 
-    // Vehicle yaw based on steering
     const steerSpeedFactor = clamp(1.0 - (this.speed / this.config.maxSpeed) * 0.4, 0.6, 1.0);
     const turnRate = this.steering * this.speed / this.wheelBase * steerSpeedFactor;
     this.yaw += turnRate * dt;
 
-    // Limit yaw angle
     const maxYaw = this.config.maxYaw || Math.PI * 0.25;
     this.yaw = clamp(this.yaw, -maxYaw, maxYaw);
 
-    // Velocity calculation
     const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
     this.velocity.copy(forward).multiplyScalar(this.speed);
 
     this.group.position.addScaledVector(this.velocity, dt);
     this.group.rotation.y = this.yaw;
+
+    this.enforceGroundPosition();
   }
 
   applySkin(skinId) {
@@ -125,16 +130,15 @@ export class Car {
     if (!skin) return;
 
     const color = skin.color;
-
-    // Change chassis color
-    if (this.chassis) {
-      this.chassis.material.color.setHex(color);
-    }
+    this.model.traverse(child => {
+      if (child.isMesh && child.material) {
+        child.material.color.setHex(color);
+      }
+    });
 
     this.currentSkin = skinId;
   }
 
   applyAccessories(accessories) {
-    // Accessories disabled - no-op
   }
 }
