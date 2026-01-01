@@ -15,7 +15,7 @@ import { CrashDebris } from './crashDebris.js';
 import { CoinSystem } from './coinSystem.js';
 import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
 import { RampSystem } from './ramps.js';
-import { VehicleLoader } from './vehicleLoader.js';
+import { VehicleSystem } from './vehicleSystem.js';
 
 const app = document.getElementById('app');
 
@@ -79,8 +79,8 @@ scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
 
 // Professional lighting system for GLTF model visibility
-// Enhanced ambient light for better overall visibility
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// CRITICAL: Strong ambient light BEFORE loading car to prevent black models
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
 scene.add(ambientLight);
 
 // Cyan point light (left side) - increased intensity
@@ -122,27 +122,15 @@ const audio = new AudioManager();
 const world = new World(scene, CONFIG);
 const car = new Car(CONFIG);
 
-// Load GLB vehicle model based on shop selection
+// NEW CLEAN VEHICLE SYSTEM - Load model with real measurements
+const vehicleSystem = new VehicleSystem();
 async function loadVehicleModel() {
   try {
-    const selectedVehicle = shopSystem.getSelectedVehicle();
-    
-    // Load the GLB model for the selected vehicle
-    await VehicleLoader.loadVehicleModel(selectedVehicle.id, car);
-    
-    // Apply currently selected skin
-    VehicleLoader.applyVehicleSkin(car, shopSystem.selectedSkin);
-    
-    // Apply currently selected accessories
-    const activeAccessories = shopSystem.selectedAccessories || [];
-    for (const accessoryId of activeAccessories) {
-      VehicleLoader.applyAccessory(car, accessoryId);
-    }
-    
-    console.log(`Loaded vehicle: ${selectedVehicle.name}`);
+    console.log('Loading vehicle with new clean system...');
+    await vehicleSystem.loadModel(car, scene);
+    console.log('Vehicle loaded and ready');
   } catch (error) {
-    console.warn('Failed to load GLB vehicle, using procedural fallback:', error);
-    // The VehicleLoader already handles fallback internally
+    console.error('Failed to load vehicle:', error);
   }
 }
 
@@ -268,43 +256,17 @@ function createShopItem(item, type) {
   itemEl.addEventListener('click', async () => {
     if (isOwned) {
       if (type === 'vehicle') {
-        // Select new vehicle and load its GLB model
+        // DISABLED FOR NOW - Shop system not compatible with new vehicle system
+        console.log('Vehicle selection disabled in new system');
         shopSystem.selectVehicle(item.id);
-        const selectedVehicle = shopSystem.getSelectedVehicle();
-        
-        // Load the GLB model for the selected vehicle
-        try {
-          await VehicleLoader.loadVehicleModel(item.id, car);
-          
-          // Apply the vehicle's default skin
-          if (selectedVehicle.defaultSkin) {
-            VehicleLoader.applyVehicleSkin(car, selectedVehicle.defaultSkin);
-            shopSystem.applySkin(selectedVehicle.defaultSkin);
-          }
-          
-          // Apply currently selected accessories
-          const activeAccessories = shopSystem.selectedAccessories || [];
-          for (const accessoryId of activeAccessories) {
-            VehicleLoader.applyAccessory(car, accessoryId);
-          }
-          
-          console.log(`Loaded vehicle: ${selectedVehicle.name}`);
-        } catch (error) {
-          console.warn('Failed to load vehicle model:', error);
-          // VehicleLoader already handles fallback internally
-        }
-        
       } else if (type === 'skin') {
+        // DISABLED FOR NOW
+        console.log('Skin selection disabled in new system');
         shopSystem.applySkin(item.id);
-        // Apply skin using VehicleLoader (works with both GLB and procedural)
-        VehicleLoader.applyVehicleSkin(car, item.id);
       } else {
+        // DISABLED FOR NOW
+        console.log('Accessory selection disabled in new system');
         shopSystem.toggleAccessory(item.id);
-        const activeAccessories = shopSystem.selectedAccessories || [];
-        // Apply accessories using VehicleLoader (works with both GLB and procedural)
-        for (const accessoryId of activeAccessories) {
-          VehicleLoader.applyAccessory(car, accessoryId);
-        }
       }
       renderShop();
     } else {
@@ -417,15 +379,9 @@ async function completeRestart() {
   sparks.reset();
   crashDebris.reset();
 
-  // APLICAR SKIN Y ACCESORIOS (GLB + Procedural con VehicleLoader)
-  const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
-  const selectedAccessories = shopSystem?.selectedAccessories || [];
-  
-  // Aplicar usando VehicleLoader (maneja GLB y procedural automáticamente)
-  VehicleLoader.applyVehicleSkin(car, selectedSkin);
-  for (const accessoryId of selectedAccessories) {
-    VehicleLoader.applyAccessory(car, accessoryId);
-  }
+  // SKIN/ACCESSORY SYSTEM DISABLED FOR NOW - Clean vehicle system
+  // const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
+  // const selectedAccessories = shopSystem?.selectedAccessories || [];
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -450,15 +406,9 @@ async function startRun() {
   sparks.reset();
   crashDebris.reset();
 
-  // APLICAR SKIN Y ACCESORIOS (GLB + Procedural con VehicleLoader)
-  const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
-  const selectedAccessories = shopSystem?.selectedAccessories || [];
-  
-  // Aplicar usando VehicleLoader (maneja GLB y procedural automáticamente)
-  VehicleLoader.applyVehicleSkin(car, selectedSkin);
-  for (const accessoryId of selectedAccessories) {
-    VehicleLoader.applyAccessory(car, accessoryId);
-  }
+  // SKIN/ACCESSORY SYSTEM DISABLED FOR NOW - Clean vehicle system
+  // const selectedSkin = shopSystem?.selectedSkin || 'yellow-neon';
+  // const selectedAccessories = shopSystem?.selectedAccessories || [];
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 

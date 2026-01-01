@@ -14,9 +14,12 @@ export class Car {
 
     // Property for active accessories
     this.activeAccessories = [];
+    
+    // Initialize wheels array as empty (will be populated by vehicle system)
+    this.wheels = [];
 
-    // Initialize with procedural vehicle
-    this.createProceduralVehicle();
+    // NO procedural vehicle - wait for GLB model to be loaded
+    // this.createProceduralVehicle();
 
     this.yaw = 0;
     this.speed = this.config.baseSpeed;
@@ -208,7 +211,10 @@ export class Car {
     this.wheelAngularVelocity = 0;
     this.steeringAngle = 0;
 
-    this.wheels.forEach(w => w.rotation.x = 0);
+    // Reset wheels if they exist
+    if (this.wheels && this.wheels.length > 0) {
+      this.wheels.forEach(w => w.rotation.x = 0);
+    }
   }
 
   /**
@@ -233,93 +239,40 @@ export class Car {
     this.speed = speed;
     this.distance += this.speed * dt;
 
-    // Professional vehicle physics
-    // 1. Smooth steering with realistic vehicle behavior
+    // SIMPLIFIED PHYSICS - No complex suspension, just basic steering
+    // 1. Smooth steering
     const targetSteering = steer * (this.config.steeringRate || 2.0);
     this.steering = lerp(this.steering, targetSteering, dt * 8);
 
-    // Calculate steering angle for front wheels
+    // Calculate steering angle
     this.steeringAngle = this.steering * this.maxSteeringAngle;
 
-    // Vehicle yaw based on steering and speed (Ackermann-like steering)
-    // Higher speed = less aggressive steering for stability
+    // Vehicle yaw based on steering
     const steerSpeedFactor = clamp(1.0 - (this.speed / this.config.maxSpeed) * 0.4, 0.6, 1.0);
     const turnRate = this.steering * this.speed / this.wheelBase * steerSpeedFactor;
     this.yaw += turnRate * dt;
 
-    // Auto-center when not steering
-    if (Math.abs(this.steering) < 0.01) {
-      this.steeringAngle = lerp(this.steeringAngle, 0, dt * 10);
-    }
-
-    // Limit yaw angle (prevents unrealistic rotation)
+    // Limit yaw angle
     const maxYaw = this.config.maxYaw || Math.PI * 0.25;
     this.yaw = clamp(this.yaw, -maxYaw, maxYaw);
 
-    // 2. Velocity calculation - forward direction based on yaw
+    // 2. Velocity calculation
     const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
     this.velocity.copy(forward).multiplyScalar(this.speed);
 
     this.group.position.addScaledVector(this.velocity, dt);
     this.group.rotation.y = this.yaw;
 
-    // 3. Vertical physics with improved suspension
-    if (this.isInAir) {
-      this.verticalVelocity -= 25.0 * dt; // gravity
-      this.group.position.y += this.verticalVelocity * dt;
-
-      // Ground collision
-      const groundLevel = this.collider ? -0.5 - (this.collider.center.y - this.collider.halfExtents.y) + 0.15 : 0.55;
-      if (this.group.position.y <= groundLevel) {
-        this.group.position.y = groundLevel;
-        this.verticalVelocity = 0;
-        this.isInAir = false;
-      }
-    } else {
-      // Suspension compression and rebound based on speed
-      // More realistic bounce that scales with speed
-      const suspensionFreq = this.distance * 0.15;
-      const bounceAmplitude = 0.012 * (this.speed / (this.config.maxSpeed || 60));
-
-      // Damped oscillation for smooth suspension feel
-      const suspensionBounce = Math.sin(suspensionFreq) * bounceAmplitude;
-      this.model.position.y = suspensionBounce;
-
-      // Add road vibration at high speeds
-      if (this.speed > 40) {
-        const vibration = (Math.random() - 0.5) * 0.003 * ((this.speed - 40) / 20);
-        this.model.position.y += vibration;
-      }
+    // 3. SIMPLE GROUND COLLISION - Keep car at ground level
+    const groundLevel = 2.0; // Car spawns at 2.0
+    if (this.group.position.y < groundLevel) {
+      this.group.position.y = groundLevel;
+      this.verticalVelocity = 0;
+      this.isInAir = false;
     }
 
-    // 4. Realistic body roll and pitch (vehicle dynamics)
-    // Roll (Z-axis rotation) based on steering and speed
-    const targetRoll = -this.steering * 0.06 * (this.speed / this.config.maxSpeed);
-    this.group.rotation.z = lerp(this.group.rotation.z, targetRoll, dt * 10);
-
-    // Pitch (X-axis rotation) based on acceleration/deceleration
-    const targetPitch = 0; // Can be enhanced later with acceleration values
-    this.group.rotation.x = lerp(this.group.rotation.x, targetPitch, dt * 5);
-
-    // 5. Wheel rotation and steering
-    const wheelRotationSpeed = (this.speed / this.wheelRadius) * dt;
-    this.wheels.forEach((wheel, i) => {
-      // Rotation on its axis (driven by speed)
-      wheel.rotateX(wheelRotationSpeed);
-
-      // Steering for front wheels (first 2 wheels)
-      if (this.wheels.length >= 4 && i < 2) {
-        // Apply steering angle to front wheels
-        // For procedural wheels (Group), rotate Y axis
-        // For GLB wheels, we need to handle carefully
-        if (wheel.children && wheel.children.length > 0) {
-          // Procedural wheel - Group with children
-          wheel.rotation.y = this.steeringAngle;
-        }
-        // GLB wheels are handled differently - we skip them for now
-        // as they may have complex hierarchies
-      }
-    });
+    // NO complex suspension for now - just keep car still
+    this.model.position.y = 0;
   }
 
   applySkin(skinId) {
