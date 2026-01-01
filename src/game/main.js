@@ -622,12 +622,6 @@ function frame(ts) {
   renderer.render(scene, camera);
 }
 
-// Aplicar skin inicial usando VehicleLoader (GLB + Procedural)
-VehicleLoader.applyVehicleSkin(car, shopSystem.selectedSkin);
-for (const accessoryId of shopSystem.selectedAccessories) {
-  VehicleLoader.applyAccessory(car, accessoryId);
-}
-
 // Iniciar con el menú
 showMenu();
 requestAnimationFrame(frame);
