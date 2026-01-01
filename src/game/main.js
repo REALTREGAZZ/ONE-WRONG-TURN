@@ -46,74 +46,53 @@ app?.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
 
-// Create aggressive synthwave gradient background
+// Aggressive synthwave gradient background
 function createGradientTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  const toCssHex = (hex) => `#${hex.toString(16).padStart(6, '0')}`;
   const { topColor, middleColor, bottomColor } = CONFIG.synthwave.sky;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, toCssHex(topColor));
-  gradient.addColorStop(0.5, toCssHex(middleColor));
-  gradient.addColorStop(1, toCssHex(bottomColor));
+  gradient.addColorStop(0, `#${topColor.toString(16).padStart(6, '0')}`);
+  gradient.addColorStop(0.5, `#${middleColor.toString(16).padStart(6, '0')}`);
+  gradient.addColorStop(1, `#${bottomColor.toString(16).padStart(6, '0')}`);
 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const texture = new THREE.CanvasTexture(canvas);
-  texture.mapping = THREE.EquirectangularReflectionMapping;
   return texture;
 }
 
 const envTexture = createGradientTexture();
 scene.background = envTexture;
-scene.environment = envTexture; // Set as environment map for all materials
-scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
+scene.environment = envTexture; 
+scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 20, 200);
 
-const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
+const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 500);
 
-// Professional lighting system for GLTF model visibility
-// CRITICAL: Strong ambient light BEFORE loading car to prevent black models
+// Lighting system
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
 scene.add(ambientLight);
 
-// Cyan point light (left side) - increased intensity
+// Point lights (Synthwave Cyan & Magenta)
 const cyanCfg = CONFIG.synthwave.lights.pointLights.cyan;
 const cyanLight = new THREE.PointLight(cyanCfg.color, 2.5, 80);
-cyanLight.position.set(-4, 4, 5);
+cyanLight.position.set(-5, 5, 5);
 scene.add(cyanLight);
 
-// Magenta point light (right side) - increased intensity
 const magentaCfg = CONFIG.synthwave.lights.pointLights.magenta;
 const magentaLight = new THREE.PointLight(magentaCfg.color, 2.5, 80);
-magentaLight.position.set(4, 4, 5);
+magentaLight.position.set(5, 5, 5);
 scene.add(magentaLight);
 
-// Main directional sun (for definition and shadows)
-const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-sun.position.set(5, 15, -5);
-sun.castShadow = true;
-sun.shadow.mapSize.width = 1024;
-sun.shadow.mapSize.height = 1024;
+// Directional sun
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(5, 15, 5);
 scene.add(sun);
-
-// Fill light for better form definition
-const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
-fillLight.position.set(-5, 8, -3);
-scene.add(fillLight);
-
-// Rim light (back light) for dramatic effect on car
-const rimLight = new THREE.DirectionalLight(0x00ffff, 0.8);
-rimLight.position.set(0, 5, -10);
-scene.add(rimLight);
-
-// Hemisphere light for natural outdoor lighting
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
-scene.add(hemiLight);
 
 const audio = new AudioManager();
 
@@ -479,14 +458,14 @@ function frame(ts) {
     }
   }
   
-  if (mode === 'playing' && !isPaused) {
+  if (mode === 'playing') {
     const { speed, speedRatio } = currentSpeed();
     const steer = getSteer();
 
     // Update light pulse effect based on speed
     pulseTime += dtRaw * 3;
     const pulseFactor = 0.8 + Math.sin(pulseTime) * 0.2;
-    const baseIntensity = cyanCfg.intensity || 2.5; // Use configured intensity or default
+    const baseIntensity = cyanCfg.intensity || 2.5; 
     cyanLight.intensity = baseIntensity * pulseFactor;
     magentaLight.intensity = baseIntensity * pulseFactor;
 
