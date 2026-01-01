@@ -41,17 +41,17 @@ export const CONFIG = {
     fog: 0x1a1a2e, // Deep purple-blue
     // Luces
     lights: {
-      ambient: { intensity: 0.8 },
+      ambient: { intensity: 0.6 },
       pointLights: {
         cyan: {
           color: 0x00ffff,
-          intensity: 0.6,
-          distance: 50,
+          intensity: 2.5,
+          distance: 80,
         },
         magenta: {
           color: 0xff00ff,
-          intensity: 0.6,
-          distance: 50,
+          intensity: 2.5,
+          distance: 80,
         },
       },
     },

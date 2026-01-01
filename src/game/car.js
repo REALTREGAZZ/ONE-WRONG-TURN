@@ -11,7 +11,7 @@ export class Car {
     // The car model group (for visual parts)
     this.model = new THREE.Group();
     this.group.add(this.model);
-    
+
     // Property for active accessories
     this.activeAccessories = [];
 
@@ -22,7 +22,7 @@ export class Car {
     this.speed = this.config.baseSpeed;
     this.distance = 0;
 
-    // Physics properties
+    // Physics properties - professional vehicle physics
     this.velocity = new THREE.Vector3();
     this.angularVelocity = 0;
     this.acceleration = 0;
@@ -30,18 +30,34 @@ export class Car {
     this.verticalVelocity = 0;
     this.isInAir = false;
 
+    // Real vehicle physics: torque-based movement
+    this.engineTorque = 0;
+    this.brakeTorque = 0;
+    this.wheelAngularVelocity = 0;
+
+    // Suspension system
+    this.suspensionRestLength = 0.3;
+    this.suspensionStiffness = 40.0; // Stiffer for better control
+    this.suspensionDamping = 3.0; // More damping to prevent bouncing
+    this.wheelRadius = 0.15;
+
+    // Realistic steering physics
+    this.wheelBase = 1.2; // Distance between front and rear axles
+    this.steeringAngle = 0;
+    this.maxSteeringAngle = Math.PI / 6; // 30 degrees
+
+    // Collision box (calculated from model)
+    this.collider = null;
+
+    // Third person camera state
+    this.isDriving = true; // Always in driving mode for this game
+
     // Adjusted Y position so wheels touch the ground
     // Wheel center at -0.4, radius 0.15 => bottom at -0.55.
     this.group.position.set(0, 0.55, 0);
 
     // Used for wall collision margin (radius should be slightly less than half of car width X = 1.2)
     this.radius = (this.config.length || 1.2) * 0.45;
-
-    // Suspension settings
-    this.suspensionRestLength = 0.6;
-    this.suspensionStiffness = 30.0;
-    this.suspensionDamping = 2.0;
-    this.wheelRadius = 0.15;
 
     // GLB model support
     this.currentModel = null;
@@ -178,9 +194,34 @@ export class Car {
     this.yaw = 0;
     this.speed = this.config.baseSpeed;
     this.distance = 0;
-    this.group.position.set(0, 0.55, 0);
+
+    // Reset to safe spawn height
+    const spawnY = this.collider ? this.calculateSpawnY() : 0.55;
+    this.group.position.set(0, spawnY, 0);
     this.group.rotation.set(0, 0, 0);
+
+    // Reset physics
+    this.velocity.set(0, 0, 0);
+    this.angularVelocity = 0;
+    this.engineTorque = 0;
+    this.brakeTorque = 0;
+    this.wheelAngularVelocity = 0;
+    this.steeringAngle = 0;
+
     this.wheels.forEach(w => w.rotation.x = 0);
+  }
+
+  /**
+   * Calculate safe spawn Y position based on collider
+   */
+  calculateSpawnY() {
+    if (!this.collider || !this.collider.halfExtents) return 0.55;
+
+    const groundLevel = -0.5;
+    const modelBottom = this.collider.center.y - this.collider.halfExtents.y;
+
+    // Spawn with 0.15 units clearance
+    return groundLevel - modelBottom + 0.15;
   }
 
   jump(velocity) {
@@ -192,60 +233,91 @@ export class Car {
     this.speed = speed;
     this.distance += this.speed * dt;
 
-    // Physics-driven movement
-    // 1. Handling Steering
+    // Professional vehicle physics
+    // 1. Smooth steering with realistic vehicle behavior
     const targetSteering = steer * (this.config.steeringRate || 2.0);
-    this.steering = lerp(this.steering, targetSteering, dt * 5);
-    
-    // Steering influence decreases with speed for stability
-    const steerSpeedFactor = clamp(1.0 - (this.speed / this.config.maxSpeed) * 0.5, 0.5, 1.0);
-    this.yaw += this.steering * steerSpeedFactor * dt;
-    
-    if (steer === 0) {
-      this.yaw += (0 - this.yaw) * Math.min(1, (this.config.autoCenterRate || 7.5) * dt);
+    this.steering = lerp(this.steering, targetSteering, dt * 8);
+
+    // Calculate steering angle for front wheels
+    this.steeringAngle = this.steering * this.maxSteeringAngle;
+
+    // Vehicle yaw based on steering and speed (Ackermann-like steering)
+    // Higher speed = less aggressive steering for stability
+    const steerSpeedFactor = clamp(1.0 - (this.speed / this.config.maxSpeed) * 0.4, 0.6, 1.0);
+    const turnRate = this.steering * this.speed / this.wheelBase * steerSpeedFactor;
+    this.yaw += turnRate * dt;
+
+    // Auto-center when not steering
+    if (Math.abs(this.steering) < 0.01) {
+      this.steeringAngle = lerp(this.steeringAngle, 0, dt * 10);
     }
-    
+
+    // Limit yaw angle (prevents unrealistic rotation)
     const maxYaw = this.config.maxYaw || Math.PI * 0.25;
     this.yaw = clamp(this.yaw, -maxYaw, maxYaw);
 
-    // 2. Velocity calculation
+    // 2. Velocity calculation - forward direction based on yaw
     const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
     this.velocity.copy(forward).multiplyScalar(this.speed);
-    
+
     this.group.position.addScaledVector(this.velocity, dt);
     this.group.rotation.y = this.yaw;
 
-    // 3. Vertical physics (simplified gravity)
+    // 3. Vertical physics with improved suspension
     if (this.isInAir) {
       this.verticalVelocity -= 25.0 * dt; // gravity
       this.group.position.y += this.verticalVelocity * dt;
-      
-      if (this.group.position.y <= 0.55) {
-        this.group.position.y = 0.55;
+
+      // Ground collision
+      const groundLevel = this.collider ? -0.5 - (this.collider.center.y - this.collider.halfExtents.y) + 0.15 : 0.55;
+      if (this.group.position.y <= groundLevel) {
+        this.group.position.y = groundLevel;
         this.verticalVelocity = 0;
         this.isInAir = false;
       }
+    } else {
+      // Suspension compression and rebound based on speed
+      // More realistic bounce that scales with speed
+      const suspensionFreq = this.distance * 0.15;
+      const bounceAmplitude = 0.012 * (this.speed / (this.config.maxSpeed || 60));
+
+      // Damped oscillation for smooth suspension feel
+      const suspensionBounce = Math.sin(suspensionFreq) * bounceAmplitude;
+      this.model.position.y = suspensionBounce;
+
+      // Add road vibration at high speeds
+      if (this.speed > 40) {
+        const vibration = (Math.random() - 0.5) * 0.003 * ((this.speed - 40) / 20);
+        this.model.position.y += vibration;
+      }
     }
 
-    // 4. Suspension Animation (Visual only)
-    const bounce = Math.sin(this.distance * 0.2) * 0.015 * (this.speed / (this.config.maxSpeed || 60));
-    this.model.position.y = bounce;
-    
-    // 5. Tilt based on steering (Inertia)
-    const targetTiltZ = -this.steering * 0.08;
-    this.group.rotation.z = lerp(this.group.rotation.z, targetTiltZ, dt * 8);
+    // 4. Realistic body roll and pitch (vehicle dynamics)
+    // Roll (Z-axis rotation) based on steering and speed
+    const targetRoll = -this.steering * 0.06 * (this.speed / this.config.maxSpeed);
+    this.group.rotation.z = lerp(this.group.rotation.z, targetRoll, dt * 10);
 
-    // 6. Wheel rotation and steering
+    // Pitch (X-axis rotation) based on acceleration/deceleration
+    const targetPitch = 0; // Can be enhanced later with acceleration values
+    this.group.rotation.x = lerp(this.group.rotation.x, targetPitch, dt * 5);
+
+    // 5. Wheel rotation and steering
     const wheelRotationSpeed = (this.speed / this.wheelRadius) * dt;
     this.wheels.forEach((wheel, i) => {
-      // Rotation on its axis
+      // Rotation on its axis (driven by speed)
       wheel.rotateX(wheelRotationSpeed);
-      
-      // Steering for front wheels (assume first 2 wheels are front if we have 4)
+
+      // Steering for front wheels (first 2 wheels)
       if (this.wheels.length >= 4 && i < 2) {
-        // We need to handle this carefully if it's a GLB model
-        // If it's a procedural wheel, it's a Group containing tire and rim
-        // If it's a GLB mesh, we might need a parent group for steering
+        // Apply steering angle to front wheels
+        // For procedural wheels (Group), rotate Y axis
+        // For GLB wheels, we need to handle carefully
+        if (wheel.children && wheel.children.length > 0) {
+          // Procedural wheel - Group with children
+          wheel.rotation.y = this.steeringAngle;
+        }
+        // GLB wheels are handled differently - we skip them for now
+        // as they may have complex hierarchies
       }
     });
   }
