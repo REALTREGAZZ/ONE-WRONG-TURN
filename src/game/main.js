@@ -13,7 +13,105 @@ import { Sparks } from './sparks.js';
 import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
 import { CoinSystem } from './coinSystem.js';
-import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
+
+const SHOP_ITEMS = {
+  skins: [
+    {
+      id: 'red',
+      name: 'Red',
+      description: 'Classic red',
+      color: 0xff0000,
+      price: 0,
+      owned: true,
+    },
+    {
+      id: 'blue',
+      name: 'Blue',
+      description: 'Cool blue',
+      color: 0x0066ff,
+      price: 100,
+      owned: false,
+    },
+    {
+      id: 'green',
+      name: 'Green',
+      description: 'Neon green',
+      color: 0x00ff66,
+      price: 100,
+      owned: false,
+    },
+    {
+      id: 'yellow',
+      name: 'Yellow',
+      description: 'Electric yellow',
+      color: 0xffff00,
+      price: 100,
+      owned: false,
+    },
+  ],
+};
+
+class ShopSystem {
+  constructor(coinSystem) {
+    this.coinSystem = coinSystem;
+    this.selectedSkin = 'red';
+    this.loadState();
+  }
+
+  loadState() {
+    const saved = localStorage.getItem('owt_shop_state');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        if (state.ownedItems) {
+          Object.keys(state.ownedItems).forEach(id => {
+            const item = SHOP_ITEMS.skins.find(s => s.id === id);
+            if (item) item.owned = true;
+          });
+        }
+        if (state.selectedSkin) {
+          this.selectedSkin = state.selectedSkin;
+        }
+      } catch (e) {
+        console.error('Failed to load shop state:', e);
+      }
+    }
+  }
+
+  saveState() {
+    const ownedItems = {};
+    SHOP_ITEMS.skins.forEach(skin => {
+      if (skin.owned) ownedItems[skin.id] = true;
+    });
+    
+    localStorage.setItem('owt_shop_state', JSON.stringify({
+      ownedItems,
+      selectedSkin: this.selectedSkin,
+    }));
+  }
+
+  purchaseItem(itemId) {
+    const item = SHOP_ITEMS.skins.find(s => s.id === itemId);
+    if (!item || item.owned) return false;
+
+    if (this.coinSystem.getTotal() >= item.price) {
+      this.coinSystem.spendCoins(item.price);
+      item.owned = true;
+      this.saveState();
+      return true;
+    }
+    return false;
+  }
+
+  applySkin(itemId) {
+    const item = SHOP_ITEMS.skins.find(s => s.id === itemId);
+    if (!item || !item.owned) return false;
+
+    this.selectedSkin = itemId;
+    this.saveState();
+    return true;
+  }
+}
 
 const app = document.getElementById('app');
 

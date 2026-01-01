@@ -1,6 +1,5 @@
 // Using global THREE from CDN - no import needed
 import { clamp, lerp } from './helpers.js';
-import { VehicleSpawner } from './vehicleSpawner.js';
 
 export class Car {
   constructor(config) {
@@ -13,7 +12,6 @@ export class Car {
     this.group.add(this.model);
 
     this.wheels = [];
-    this.vehicleSpawner = new VehicleSpawner(null, config);
 
     this.yaw = 0;
     this.speed = this.config.baseSpeed;
@@ -27,31 +25,7 @@ export class Car {
     this.maxSteeringAngle = Math.PI / 6;
     this.radius = (this.config.width || 2.0) * 0.45;
 
-    this.loadVehicleModel();
-  }
-
-  async loadVehicleModel() {
-    try {
-      const vehicleModel = await this.vehicleSpawner.loadVehicle(
-        '/src/assets/models/low_poly/scene.gltf'
-      );
-
-      while (this.model.children.length > 0) {
-        this.model.remove(this.model.children[0]);
-      }
-
-      this.model.add(vehicleModel);
-      this.enforceGroundPosition();
-    } catch (error) {
-      console.error('Failed to load vehicle model:', error);
-      this.createProceduralVehicle();
-    }
-  }
-
-  enforceGroundPosition() {
-    if (this.group.position.y < 2.05) {
-      this.group.position.y = 2.0;
-    }
+    this.createProceduralVehicle();
   }
 
   createProceduralVehicle() {
@@ -120,8 +94,6 @@ export class Car {
 
     this.group.position.addScaledVector(this.velocity, dt);
     this.group.rotation.y = this.yaw;
-
-    this.enforceGroundPosition();
   }
 
   applySkin(skinId) {
