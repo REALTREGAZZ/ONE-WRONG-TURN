@@ -13,7 +13,7 @@ export const SHOP_ITEMS = {
       name: 'Blue',
       price: 100,
       owned: false,
-      color: 0x0000FF,
+      color: 0x0088FF,
       description: 'Cool blue.'
     },
     {

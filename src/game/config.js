@@ -3,8 +3,8 @@ export const CONFIG = {
   synthwave: {
     // Colores del coche
     car: {
-      color: 0xffff00, // Amarillo neón
-      emissive: 0xffff00,
+      color: 0xff0000, // Rojo brillante
+      emissive: 0xff0000,
       emissiveIntensity: 0.6,
     },
     // Colores de muros
@@ -15,33 +15,33 @@ export const CONFIG = {
         emissiveIntensity: 0.8,
       },
       right: {
-        color: 0xff00ff, // Magenta
-        emissive: 0xff00ff,
+        color: 0x00ffff, // Cyan (User requested walls: cyan)
+        emissive: 0x00ffff,
         emissiveIntensity: 0.8,
       },
     },
     // Carretera y grid
     road: {
-      color: 0x1a1a3e, // Azul oscuro
+      color: 0x0a0a0a, // Negro
       gridColor: 0xffff00, // Amarillo neón
     },
     // Edificios/obstacles
     buildings: {
-      color1: 0xff6b35, // Naranja
-      color2: 0xff1493, // Magenta fuerte
-      emissiveIntensity: 0.5,
+      color1: 0x1a1a2e, // Azul oscuro
+      color2: 0x16213e, // Otro azul oscuro
+      emissiveIntensity: 0.3,
     },
     // Cielo
     sky: {
-      topColor: 0x2a0845, // Púrpura
-      middleColor: 0xff6b35, // Naranja
-      bottomColor: 0x0a0a0f, // Negro
+      topColor: 0xff00ff, // Magenta vibrante
+      middleColor: 0x8a2be2, // Violeta/BlueViolet
+      bottomColor: 0x000000, // Negro
     },
     // Fog
-    fog: 0x1a1a2e, // Deep purple-blue
+    fog: 0x000000, // Black fog for cleaner look
     // Luces
     lights: {
-      ambient: { intensity: 0.6 },
+      ambient: { intensity: 1.0 },
       pointLights: {
         cyan: {
           color: 0x00ffff,

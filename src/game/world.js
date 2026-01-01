@@ -81,46 +81,28 @@ export class World {
   }
 
   _createEnvironment() {
-    // Ground/Floor mejorado - más ancho
-    const groundGeo = new THREE.PlaneGeometry(50, 2000); // Más ancho y largo
+    // Ground/Floor - dark black for synthwave look
+    const groundGeo = new THREE.PlaneGeometry(100, 2000); 
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a3e,
-      metalness: 0.3,
-      roughness: 0.7,
-      wireframe: false
+      color: 0x000000,
+      metalness: 0.1,
+      roughness: 0.9,
     });
     this.ground = new THREE.Mesh(groundGeo, groundMat);
     this.ground.rotation.x = -Math.PI / 2;
-    this.ground.position.y = -0.5;
+    this.ground.position.y = -0.55; // Slightly below road
     this.ground.receiveShadow = true;
     this.scene.add(this.ground);
-
-    // Agregar "bermas" (bordes del camino) para evitar traspaso
-    const bermaLeft = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.2, 2000),
-      new THREE.MeshStandardMaterial({ color: 0x333333 })
-    );
-    bermaLeft.position.set(-5, -0.35, 0);
-    this.scene.add(bermaLeft);
-
-    const bermaRight = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.2, 2000),
-      new THREE.MeshStandardMaterial({ color: 0x333333 })
-    );
-    bermaRight.position.set(5, -0.35, 0);
-    this.scene.add(bermaRight);
   }
 
   _createRoadMeshes() {
     const unitBox = new THREE.BoxGeometry(1, 1, 1);
 
-    // Synthwave dark blue road with glow
+    // Synthwave dark road
     const roadMat = new THREE.MeshStandardMaterial({
       color: this.config.synthwave.road.color,
-      roughness: 0.3,
-      metalness: 0.5,
-      emissive: new THREE.Color(0x0a0a2e),
-      emissiveIntensity: 0.3,
+      roughness: 0.1,
+      metalness: 0.2,
     });
 
     // Cyan neon wall (left)
@@ -210,8 +192,8 @@ export class World {
       vertexColors: true,
     });
 
-    // Paleta extendida de colores para más variedad
-    this._buildingPalette = [0xff6b35, 0xff1493, 0x00ffff, 0x9933ff, 0xff0000, 0xffff00, 0x00ff00];
+    // Paleta extendida de colores para más variedad (Synthwave)
+    this._buildingPalette = [0x00ffff, 0xff00ff, 0x9933ff, 0x0000ff, 0xff0088];
 
     this.buildingCount = this.segmentCount * 2;
     this.buildings = new THREE.InstancedMesh(unitBox, mat, this.buildingCount);
