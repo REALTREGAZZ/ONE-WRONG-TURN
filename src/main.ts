@@ -1,6 +1,17 @@
 import * as THREE from 'three';
 
 // ============================================================================
+// GAME STATE
+// ============================================================================
+const gameState = {
+  isPlaying: false,
+  score: 0,
+  distance: 0,
+  roadWidth: 10,
+  crashed: false
+};
+
+// ============================================================================
 // GAME CONSTANTS
 // ============================================================================
 const CAR_SPEED = 50;
@@ -15,18 +26,11 @@ const CAR_WIDTH = 1;
 const CAR_HEIGHT = 0.8;
 const CAR_DEPTH = 2;
 const WORLD_RESET_DISTANCE = 10000;
-
-// ============================================================================
-// GAME STATE
-// ============================================================================
-type GameState = 'PLAYING' | 'DEAD';
-
-let gameState: GameState = 'PLAYING';
+let lastTimestamp = 0;
+let distanceTraveled = 0;
 let elapsedTime = 0;
 let coins = 0;
-let distanceTraveled = 0;
 let currentRoadWidth = INITIAL_ROAD_WIDTH;
-let lastTimestamp = 0;
 
 // ============================================================================
 // THREE.JS SETUP
@@ -36,10 +40,8 @@ let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
 let car: THREE.Mesh;
 let road: THREE.Mesh;
-let walls: THREE.Mesh[] = [];
-let ambientLight: THREE.AmbientLight;
-let cyanLight: THREE.PointLight;
-let magentaLight: THREE.PointLight;
+let walls: any[] = [];
+let lights: any;
 
 // Input state
 let keys: { [key: string]: boolean } = {};
@@ -63,19 +65,17 @@ function initScene() {
     renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(renderer.domElement);
     
-    // Create synthwave gradient background
-    createSynthwaveBackground();
+    // Setup scene background and fog
+    setupScene();
     
     // Setup lighting
-    setupLights();
+    lights = setupLights();
     
     // Create car
     car = createCar();
-    scene.add(car);
     
     // Create road
     road = createRoad();
-    scene.add(road);
     
     // Create initial walls
     createInitialWalls();
@@ -98,87 +98,89 @@ function initScene() {
   }
 }
 
-function createSynthwaveBackground() {
-  // Create canvas for gradient background
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
-  
-  const context = canvas.getContext('2d');
-  if (!context) return;
-  
-  // Create magenta to violet gradient
-  const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#FF00FF');  // Magenta
-  gradient.addColorStop(1, '#7700FF');  // Violet
-  
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  
-  const texture = new THREE.CanvasTexture(canvas);
-  scene.background = texture;
+function setupScene() {
+  scene.background = new THREE.Color(0x1a001a); // Dark magenta/purple
+  scene.fog = new THREE.Fog(0xff00ff, 200, 500); // Magenta fog
 }
 
 function setupLights() {
-  // Ambient light
-  ambientLight = new THREE.AmbientLight(0xFFFFFF, 1.5);
+  // Ambient light (bright, no dark zones)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
   scene.add(ambientLight);
 
-  // Cyan point light
-  cyanLight = new THREE.PointLight(0x00FFFF, 1.5, 40);
+  // Directional light (definition)
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  directionalLight.position.set(10, 20, 10);
+  scene.add(directionalLight);
+
+  // Cyan point light (disco left)
+  const cyanLight = new THREE.PointLight(0x00ffff, 1.5, 50);
   scene.add(cyanLight);
 
-  // Magenta point light
-  magentaLight = new THREE.PointLight(0xFF00FF, 1.5, 40);
+  // Magenta point light (disco right)
+  const magentaLight = new THREE.PointLight(0xff00ff, 1.5, 50);
   scene.add(magentaLight);
+
+  return { cyanLight, magentaLight };
 }
 
 function createCar(): THREE.Mesh {
-  const geometry = new THREE.BoxGeometry(CAR_WIDTH, CAR_HEIGHT, CAR_DEPTH);
-  const material = new THREE.MeshPhongMaterial({
-    color: 0xFF0033,  // Bright red
-    shininess: 50
+  const carGeometry = new THREE.BoxGeometry(1, 0.8, 2);
+  const carMaterial = new THREE.MeshPhongMaterial({
+    color: 0xFF0033, // Bright red
+    emissive: 0xFF0033,
+    emissiveIntensity: 0.3,
+    shininess: 100
   });
-  
-  const carMesh = new THREE.Mesh(geometry, material);
-  carMesh.position.y = CAR_HEIGHT / 2;  // Position above ground
-  
-  return carMesh;
+  const car = new THREE.Mesh(carGeometry, carMaterial);
+  car.position.set(0, 0.4, 0);
+  car.userData = {
+    velocity: new THREE.Vector3(0, 0, 0),
+    speed: 50,
+    turnSpeed: 2
+  };
+  return car;
 }
 
 function createRoad(): THREE.Mesh {
-  // Create large black plane for road
-  const roadGeometry = new THREE.PlaneGeometry(1000, 1000);
-  const roadMaterial = new THREE.MeshBasicMaterial({
+  // Black plane ground
+  const groundGeometry = new THREE.PlaneGeometry(100, 1000);
+  const groundMaterial = new THREE.MeshStandardMaterial({
     color: 0x000000,
-    side: THREE.DoubleSide
+    roughness: 0.8,
+    metalness: 0.2
   });
-  
-  const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
-  roadMesh.rotation.x = -Math.PI / 2;  // Make it horizontal
-  roadMesh.position.y = -0.1;  // Slightly below car
-  
-  // Add neon grid overlay
-  const gridCanvas = createNeonGrid();
-  const gridTexture = new THREE.CanvasTexture(gridCanvas);
-  gridTexture.repeat.set(10, 10);
-  gridTexture.wrapS = THREE.RepeatWrapping;
-  gridTexture.wrapT = THREE.RepeatWrapping;
-  
-  const gridMaterial = new THREE.MeshBasicMaterial({
-    map: gridTexture,
-    transparent: true,
-    opacity: 0.3,
-    blending: THREE.AdditiveBlending
-  });
-  
-  const gridMesh = new THREE.Mesh(roadGeometry, gridMaterial);
-  gridMesh.rotation.x = -Math.PI / 2;
-  gridMesh.position.y = -0.09;  // Just above road
-  
-  scene.add(gridMesh);
-  
-  return roadMesh;
+  const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Grid overlay (yellow neon)
+  const gridGeometry = new THREE.BufferGeometry();
+  const gridPoints = [];
+  const gridSize = 100;
+  const gridSpacing = 1;
+
+  // Horizontal lines
+  for (let z = -500; z <= 500; z += gridSpacing) {
+    gridPoints.push(-gridSize, 0, z);
+    gridPoints.push(gridSize, 0, z);
+  }
+
+  // Vertical lines
+  for (let x = -gridSize; x <= gridSize; x += gridSpacing) {
+    gridPoints.push(x, 0, -500);
+    gridPoints.push(x, 0, 500);
+  }
+
+  gridGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(gridPoints), 3));
+  const gridMaterial = new THREE.LineBasicMaterial({ color: 0xffff00, linewidth: 2 });
+  const gridLines = new THREE.LineSegments(gridGeometry, gridMaterial);
+  gridLines.position.y = -0.99;
+  scene.add(gridLines);
+
+  return ground;
 }
 
 function createNeonGrid(): HTMLCanvasElement {
@@ -218,43 +220,77 @@ function createInitialWalls() {
     const zPosition = i * WALL_SPACING;
 
     // Left wall
-    const leftWall = createWall();
-    leftWall.position.x = -INITIAL_ROAD_WIDTH / 2 - 1;
-    leftWall.position.z = zPosition;
-    scene.add(leftWall);
-    walls.push(leftWall);
+    const leftX = -(INITIAL_ROAD_WIDTH / 2 + 0.5);
+    const rightX = +(INITIAL_ROAD_WIDTH / 2 + 0.5);
 
-    // Right wall
-    const rightWall = createWall();
-    rightWall.position.x = INITIAL_ROAD_WIDTH / 2 + 1;
-    rightWall.position.z = zPosition;
-    scene.add(rightWall);
-    walls.push(rightWall);
+    createWall(leftX, zPosition);
+    createWall(rightX, zPosition);
+
+    // Track for collision detection
+    walls.push({ x: leftX, z: zPosition, width: INITIAL_ROAD_WIDTH });
+    walls.push({ x: rightX, z: zPosition, width: INITIAL_ROAD_WIDTH });
   }
 }
 
-function createWall(): THREE.Mesh {
-  const geometry = new THREE.BoxGeometry(1, WALL_HEIGHT, WALL_DEPTH);
-  const material = new THREE.MeshPhongMaterial({
-    color: 0x00FFFF,  // Cyan
-    emissive: 0x00FFFF,
-    emissiveIntensity: 0.5
+function createWall(x: number, z: number): THREE.Mesh {
+  const wallGeometry = new THREE.BoxGeometry(1, 3, 5);
+  const wallMaterial = new THREE.MeshStandardMaterial({
+    color: 0x00ffff,
+    emissive: 0x00ffff,
+    emissiveIntensity: 0.8,
+    roughness: 0.2,
+    metalness: 0.8
   });
-  
-  const wall = new THREE.Mesh(geometry, material);
-  wall.position.y = WALL_HEIGHT / 2;  // Position above ground
-  
+  const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+  wall.position.set(x, 1.5, z);
+  wall.castShadow = true;
+  wall.receiveShadow = true;
+  wall.userData.isWall = true;
+  scene.add(wall);
   return wall;
 }
 
 // ============================================================================
 // DYNAMIC ROAD NARROWING
 // ============================================================================
-function calculateRoadWidth(distanceTraveled: number): number {
+function calculateRoadWidth(distance: number): number {
   return Math.max(
     MINIMUM_ROAD_WIDTH,
-    INITIAL_ROAD_WIDTH - (distanceTraveled / NARROWING_RATE)
+    INITIAL_ROAD_WIDTH - (distance / NARROWING_RATE)
   );
+}
+
+function generateRoadSegments(roadWidth: number) {
+  // Remove walls that are behind the camera
+  const cameraThreshold = camera.position.z - 50;
+  
+  walls = walls.filter(wall => {
+    if (wall.z < cameraThreshold) {
+      return false;
+    }
+    return true;
+  });
+  
+  // Add new walls ahead of the camera
+  let farthestWall = walls.length > 0 ? Math.max(...walls.map(wall => wall.z)) : camera.position.z;
+  
+  while (farthestWall < camera.position.z + 100) {
+    const zPosition = farthestWall + WALL_SPACING;
+    
+    // Left wall
+    const leftX = -(roadWidth / 2 + 0.5);
+    const rightX = +(roadWidth / 2 + 0.5);
+    
+    createWall(leftX, zPosition);
+    createWall(rightX, zPosition);
+    
+    // Track for collision detection
+    walls.push({ x: leftX, z: zPosition, width: roadWidth });
+    walls.push({ x: rightX, z: zPosition, width: roadWidth });
+    
+    // Update farthestWall for the next iteration
+    farthestWall = zPosition;
+  }
 }
 
 function worldReset() {
@@ -285,21 +321,21 @@ function worldReset() {
 function setupInput() {
   window.addEventListener('keydown', (event) => {
     keys[event.key] = true;
-    
-    // Restart game on any key when dead
-    if (gameState === 'DEAD') {
-      restartGame();
+
+    // Start game on any key if not playing
+    if (!gameState.isPlaying && !gameState.crashed) {
+      gameState.isPlaying = true;
     }
   });
-  
+
   window.addEventListener('keyup', (event) => {
     keys[event.key] = false;
   });
-  
+
   // Also handle touch/mobile input
   window.addEventListener('touchstart', (event) => {
-    if (gameState === 'DEAD') {
-      restartGame();
+    if (!gameState.isPlaying && !gameState.crashed) {
+      gameState.isPlaying = true;
     }
   });
 }
@@ -308,123 +344,33 @@ function setupInput() {
 // GAME LOGIC
 // ============================================================================
 function restartGame() {
-  // Reset game state
-  gameState = 'PLAYING';
-  elapsedTime = 0;
-  coins = 0;
-  distanceTraveled = 0;
-  currentRoadWidth = INITIAL_ROAD_WIDTH;
-
-  // Reset car position and rotation
-  car.position.set(0, CAR_HEIGHT / 2, 0);
+  car.position.set(0, 0.4, 0);
   car.rotation.y = 0;
+  gameState.distance = 0;
+  gameState.score = 0;
+  gameState.roadWidth = INITIAL_ROAD_WIDTH;
+  gameState.isPlaying = true;
+  gameState.crashed = false;
 
-  // Reset camera
-  updateCamera();
-
-  // Hide death screen
-  const deathScreen = document.getElementById('death-screen');
-  if (deathScreen) {
-    deathScreen.style.display = 'none';
-  }
-
-  // Reset walls
-  walls.forEach(wall => scene.remove(wall));
-  walls = [];
-  createInitialWalls();
-
-  // Update HUD
-  updateHUD();
-}
-
-function updateCamera() {
-  // Position camera behind car
-  camera.position.x = car.position.x;
-  camera.position.y = 5;
-  camera.position.z = car.position.z - 15;
-  
-  // Look at point ahead of car
-  camera.lookAt(car.position.x, car.position.y + 2, car.position.z + 5);
-}
-
-function updateLights() {
-  // Update cyan light position (follows car with disco effect)
-  cyanLight.position.copy(car.position).add(new THREE.Vector3(5, 5, -10));
-
-  // Update magenta light position (follows car with disco effect)
-  magentaLight.position.copy(car.position).add(new THREE.Vector3(-5, 5, -10));
-}
-
-function updateCar(deltaTime: number) {
-  // Handle rotation input
-  if (keys['a'] || keys['A'] || keys['ArrowLeft']) {
-    car.rotation.y -= TURN_SPEED * deltaTime;
-  }
-  if (keys['d'] || keys['D'] || keys['ArrowRight']) {
-    car.rotation.y += TURN_SPEED * deltaTime;
-  }
-
-  // Calculate movement based on rotation
-  const moveX = Math.sin(car.rotation.y) * CAR_SPEED * deltaTime;
-  const moveZ = Math.cos(car.rotation.y) * CAR_SPEED * deltaTime;
-
-  // Update car position
-  car.position.x += moveX;
-  car.position.z += moveZ;
-
-  // Track distance traveled
-  distanceTraveled = car.position.z;
-
-  // Update elapsed time
-  elapsedTime += deltaTime;
-
-  // Update coins (based on distance traveled)
-  coins = Math.floor(distanceTraveled / 10) + Math.floor(elapsedTime);
-}
-
-function updateWalls() {
-  // Calculate current road width based on distance
-  currentRoadWidth = calculateRoadWidth(distanceTraveled);
-
-  // Remove walls that are behind the camera
-  const cameraThreshold = camera.position.z - 50;
-
-  walls = walls.filter(wall => {
-    if (wall.position.z < cameraThreshold) {
-      scene.remove(wall);
+  // Remove all wall objects from scene
+  scene.children = scene.children.filter(child => {
+    // Keep only non-wall objects
+    if (child.userData && child.userData.isWall) {
       return false;
     }
     return true;
   });
 
-  // Add new walls ahead of the camera
-  let farthestWall = Math.max(...walls.map(wall => wall.position.z), camera.position.z);
+  walls.length = 0;
+  createInitialWalls();
 
-  while (farthestWall < camera.position.z + 100) {
-    const zPosition = farthestWall + WALL_SPACING;
-
-    // Left wall
-    const leftWall = createWall();
-    leftWall.position.x = -currentRoadWidth / 2 - 1;
-    leftWall.position.z = zPosition;
-    scene.add(leftWall);
-    walls.push(leftWall);
-
-    // Right wall
-    const rightWall = createWall();
-    rightWall.position.x = currentRoadWidth / 2 + 1;
-    rightWall.position.z = zPosition;
-    scene.add(rightWall);
-    walls.push(rightWall);
-
-    // Update farthestWall for the next iteration
-    farthestWall = zPosition;
+  const deathScreen = document.getElementById('death-screen');
+  if (deathScreen) {
+    deathScreen.classList.remove('show');
   }
-}
+  }
 
-function checkCollisions() {
-  if (gameState !== 'PLAYING') return;
-
+function checkCollisions(car: THREE.Mesh) {
   // Create car bounding box
   const carBox = {
     min: {
@@ -443,14 +389,14 @@ function checkCollisions() {
   for (const wall of walls) {
     const wallBox = {
       min: {
-        x: wall.position.x - 0.5,
-        y: wall.position.y - WALL_HEIGHT / 2,
-        z: wall.position.z - WALL_DEPTH / 2
+        x: wall.x - 0.5,
+        y: -1.5,
+        z: wall.z - 2.5
       },
       max: {
-        x: wall.position.x + 0.5,
-        y: wall.position.y + WALL_HEIGHT / 2,
-        z: wall.position.z + WALL_DEPTH / 2
+        x: wall.x + 0.5,
+        y: 1.5,
+        z: wall.z + 2.5
       }
     };
 
@@ -463,98 +409,100 @@ function checkCollisions() {
       carBox.min.z < wallBox.max.z &&
       carBox.max.z > wallBox.min.z
     ) {
-      // Collision detected!
-      gameState = 'DEAD';
-
-      // Show death screen
-      const deathScreen = document.getElementById('death-screen') as HTMLElement;
-      const deathMessage = document.getElementById('death-message') as HTMLElement;
-      const deathStats = document.getElementById('death-stats') as HTMLElement;
-
-      const messages = [
-        'YOU TURNED TOO LATE.',
-        'TOO GREEDY.',
-        'YOU HESITATED.',
-        'ALMOST.',
-        'NOT FAST ENOUGH.',
-        'PRECISION FAILED.'
-      ];
-
-      if (deathMessage) {
-        deathMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
-      }
-
-      if (deathStats) {
-        deathStats.textContent = `DISTANCE: ${Math.floor(distanceTraveled)}m | TIME: ${elapsedTime.toFixed(2)}s`;
-      }
-
-      if (deathScreen) {
-        deathScreen.style.display = 'block';
-      }
-
-      break;
+      return true;
     }
   }
+  return false;
+}
+
+function showDeathScreen() {
+  const deathScreen = document.getElementById('death-screen');
+  const deathMessage = document.getElementById('death-message');
+  const deathStats = document.getElementById('death-stats');
+
+  if (!deathScreen || !deathMessage || !deathStats) return;
+
+  const messages = [
+    'YOU TURNED TOO LATE.',
+    'TOO GREEDY.',
+    'YOU HESITATED.',
+    'ALMOST.',
+    'NOT FAST ENOUGH.',
+    'PRECISION FAILED.'
+  ];
+
+  deathMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+  deathStats.textContent = `DISTANCE: ${Math.floor(gameState.distance)}m | TIME: ${(gameState.distance / 50).toFixed(2)}s`;
+
+  deathScreen.classList.add('show');
+
+  const handler = (e: KeyboardEvent) => {
+    document.removeEventListener('keydown', handler);
+    deathScreen.classList.remove('show');
+    restartGame();
+  };
+  document.addEventListener('keydown', handler);
 }
 
 function updateHUD() {
-  const distanceElement = document.getElementById('distance');
-  const speedElement = document.getElementById('speed');
-  const widthElement = document.getElementById('roadwidth');
-  const timeElement = document.getElementById('time');
+  const scoreEl = document.getElementById('score');
+  const distanceEl = document.getElementById('distance');
+  const speedEl = document.getElementById('speed');
+  const widthEl = document.getElementById('roadwidth');
 
-  if (distanceElement) {
-    distanceElement.textContent = `DISTANCE: ${Math.floor(distanceTraveled)}m`;
-  }
-
-  if (speedElement) {
-    speedElement.textContent = `SPEED: ${CAR_SPEED}u/s`;
-  }
-
-  if (widthElement) {
-    widthElement.textContent = `WIDTH: ${currentRoadWidth.toFixed(1)}u`;
-  }
-
-  if (timeElement) {
-    timeElement.textContent = `TIME: ${elapsedTime.toFixed(2)}s`;
-  }
+  if (scoreEl) scoreEl.textContent = `SCORE: ${gameState.score}`;
+  if (distanceEl) distanceEl.textContent = `DISTANCE: ${Math.floor(gameState.distance)}m`;
+  if (speedEl) speedEl.textContent = `SPEED: ${car.userData.speed}u/s`;
+  if (widthEl) widthEl.textContent = `WIDTH: ${gameState.roadWidth.toFixed(1)}u`;
 }
 
 // ============================================================================
 // GAME LOOP
 // ============================================================================
 function gameLoop() {
-  try {
-    const now = performance.now();
-    const deltaTime = (now - lastTimestamp) / 1000;  // Convert to seconds
-    lastTimestamp = now;
+  requestAnimationFrame(gameLoop);
+  const deltaTime = 1 / 60;
 
-    if (gameState === 'PLAYING') {
-      // Update game logic
-      updateCar(deltaTime);
-      updateCamera();
-      updateLights();
-      updateWalls();
-      checkCollisions();
-      updateHUD();
+  if (gameState.isPlaying) {
+    // Move car forward
+    car.position.z += car.userData.speed * deltaTime;
 
-      // World reset to prevent float overflow
-      if (distanceTraveled > WORLD_RESET_DISTANCE) {
-        worldReset();
-      }
+    // Input
+    if (keys['a'] || keys['A']) {
+      car.rotation.y += car.userData.turnSpeed * deltaTime;
+    }
+    if (keys['d'] || keys['D']) {
+      car.rotation.y -= car.userData.turnSpeed * deltaTime;
     }
 
-    // Render scene
-    renderer.render(scene, camera);
+    // Update game state
+    gameState.distance = car.position.z;
+    gameState.roadWidth = calculateRoadWidth(gameState.distance);
+    gameState.score = Math.floor(gameState.distance * 10);
 
-    // Continue game loop
-    requestAnimationFrame(gameLoop);
+    // Spawn walls
+    generateRoadSegments(gameState.roadWidth);
 
-  } catch (error) {
-    console.error('[ONE WRONG TURN] Error in game loop:', error);
-    // Continue loop even if error occurs
-    requestAnimationFrame(gameLoop);
+    // Collision check
+    if (checkCollisions(car)) {
+      gameState.isPlaying = false;
+      gameState.crashed = true;
+      showDeathScreen();
+    }
+
+    // Update lights follow car
+    lights.cyanLight.position.copy(car.position).add(new THREE.Vector3(5, 5, -10));
+    lights.magentaLight.position.copy(car.position).add(new THREE.Vector3(-5, 5, -10));
+
+    // Update camera
+    camera.position.copy(car.position).add(new THREE.Vector3(0, 5, -15));
+    camera.lookAt(car.position.clone().add(new THREE.Vector3(0, 2, 5)));
+
+    // Update HUD
+    updateHUD();
   }
+
+  renderer.render(scene, camera);
 }
 
 // ============================================================================

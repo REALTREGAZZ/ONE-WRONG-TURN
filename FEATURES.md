@@ -27,21 +27,11 @@
 - [x] **Coin Earning Formula**: distance/10 + time_in_seconds
 - [x] **localStorage Persistence**: All stats saved locally
 
-## ✅ Shop System
-
-- [x] **8 Car Skins**: default, red, blue, yellow, green, cyan, orange, purple
-- [x] **1000 Coins Each**: Fixed price for all skins
-- [x] **Purely Cosmetic**: No gameplay advantages
-- [x] **Persistence**: Selected skin persists across sessions
-- [x] **Visual Preview**: Color preview for each skin
-- [x] **Purchase System**: Buy with earned coins
-
 ## ✅ UI Screens
 
 - [x] **Home Screen**: Title, start prompt, best time preview, navigation buttons
 - [x] **Death Screen**: Random message, time survived, coins earned, restart prompt
 - [x] **Stats Screen**: Best run, crashes, attempts, total coins
-- [x] **Shop Screen**: Coin balance, skin grid, buy/select buttons
 - [x] **Settings Screen**: Audio on/off toggle
 - [x] **Game HUD**: Time and coins display during gameplay
 
@@ -109,7 +99,6 @@
 | Road Width | 8 units | Constant throughout |
 | Wall Height | 2 units | Barrier height |
 | Camera Offset | (0, 8, 12) | Behind/above car |
-| Skin Price | 1000 coins | All skins cost the same |
 | Crash Slow-Mo | 0.3s at 30% | Dramatic crash effect |
 | Freeze Duration | 0.5s | After crash |
 | Restart Delay | 300ms | Before restart allowed |
@@ -131,7 +120,6 @@ Segments shuffle on each playthrough for variety while maintaining fairness.
 ✅ Crashes are brutal, fair, and satisfying  
 ✅ Instant restart (300ms max delay)  
 ✅ Stats persist across sessions  
-✅ Shop works, coins earned, skins apply  
 ✅ 60 FPS stable performance target  
 ✅ Single HTML file ready for Poki  
 ✅ Runs on modern browsers  

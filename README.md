@@ -13,7 +13,6 @@ ONE WRONG TURN is a minimalist 3D driving game where you navigate a constantly m
 - **Touch Support**: Tap left/right sides of screen on mobile devices
 - **Procedural Road Generation**: Hand-crafted segments that shuffle for fair, playable layouts
 - **Persistent Stats**: Track your best run, total crashes, attempts, and coins
-- **Shop System**: Unlock 8 cosmetic car skins with earned coins
 - **Low-poly 3D Aesthetic**: Clean, bold, saturated color palette with exaggerated lighting
 - **Audio System**: Engine sound, crash effects, and UI feedback
 - **Responsive Design**: Works on desktop, tablet, and mobile browsers
@@ -32,7 +31,6 @@ ONE WRONG TURN is a minimalist 3D driving game where you navigate a constantly m
 2. Navigate through winding roads by turning left or right
 3. Collision with walls = instant death
 4. Earn coins based on distance and survival time
-5. Use coins to purchase cosmetic car skins in the shop
 
 ## Development
 
