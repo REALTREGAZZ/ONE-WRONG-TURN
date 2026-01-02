@@ -170,36 +170,44 @@ export class Road {
   }
 
   public update(carPosition: THREE.Vector3): void {
-    const carZ = carPosition.z;
+    try {
+      const carZ = carPosition.z;
 
-    if (this.currentZ - carZ < 200) {
-      this.addSegment();
-    }
-
-    const removeThreshold = carZ + 50;
-    while (this.walls.length > 0 && this.walls[0].maxZ > removeThreshold) {
-      this.walls.shift();
-    }
-
-    const childrenToRemove = [];
-    for (let i = 0; i < this.group.children.length; i++) {
-      const child = this.group.children[i];
-      if (child.position.z > carZ + 50) {
-        childrenToRemove.push(child);
+      // Add new segments as needed
+      if (this.currentZ - carZ < 200) {
+        this.addSegment();
       }
-    }
 
-    childrenToRemove.forEach((child) => {
-      this.group.remove(child);
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (Array.isArray(child.material)) {
-          child.material.forEach((m) => m.dispose());
-        } else {
-          child.material.dispose();
+      // Remove walls that are behind the car (car moves in negative Z direction)
+      // Walls with minZ > carZ + 50 are behind the car and should be removed
+      const removeThreshold = carZ + 50;
+      while (this.walls.length > 0 && this.walls[0].minZ > removeThreshold) {
+        this.walls.shift();
+      }
+
+      // Remove mesh objects that are behind the car
+      const childrenToRemove: THREE.Object3D[] = [];
+      for (let i = 0; i < this.group.children.length; i++) {
+        const child = this.group.children[i];
+        if (child.position.z > removeThreshold) {
+          childrenToRemove.push(child);
         }
       }
-    });
+
+      childrenToRemove.forEach((child) => {
+        this.group.remove(child);
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error in road update:', error);
+    }
   }
 
   public reset(): void {

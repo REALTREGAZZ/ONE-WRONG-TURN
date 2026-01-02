@@ -8,13 +8,22 @@ interface Wall {
 }
 
 export class Collision {
-  public checkCollision(carBounds: CarBounds, walls: Wall[]): boolean {
-    for (const wall of walls) {
-      if (this.aabbIntersect(carBounds, wall)) {
-        return true;
-      }
+  public checkCollision(carBounds: CarBounds | null, walls: Wall[] | null): boolean {
+    if (!carBounds || !walls || walls.length === 0) {
+      return false;
     }
-    return false;
+
+    try {
+      for (const wall of walls) {
+        if (this.aabbIntersect(carBounds, wall)) {
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error checking collision:', error);
+      return false;
+    }
   }
 
   private aabbIntersect(a: CarBounds, b: Wall): boolean {

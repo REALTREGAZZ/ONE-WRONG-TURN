@@ -83,16 +83,20 @@ export class Car {
   }
 
   public update(deltaTime: number, turnInput: number): void {
-    this.rotation += turnInput * this.turnSpeed * deltaTime;
+    try {
+      this.rotation += turnInput * this.turnSpeed * deltaTime;
 
-    const moveX = Math.sin(this.rotation) * this.speed * deltaTime;
-    const moveZ = Math.cos(this.rotation) * this.speed * deltaTime;
+      const moveX = Math.sin(this.rotation) * this.speed * deltaTime;
+      const moveZ = Math.cos(this.rotation) * this.speed * deltaTime;
 
-    this.position.x += moveX;
-    this.position.z -= moveZ;
+      this.position.x += moveX;
+      this.position.z -= moveZ;
 
-    this.mesh.position.copy(this.position);
-    this.mesh.rotation.y = this.rotation;
+      this.mesh.position.copy(this.position);
+      this.mesh.rotation.y = this.rotation;
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error updating car:', error);
+    }
   }
 
   public reset(): void {

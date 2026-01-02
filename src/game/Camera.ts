@@ -27,39 +27,43 @@ export class Camera {
   }
 
   public update(deltaTime: number, shake: boolean, shakeIntensity: number): void {
-    if (!this.target) return;
+    try {
+      if (!this.target) return;
 
-    if (shake && shakeIntensity > 0) {
-      this.shakeAmount = shakeIntensity;
+      if (shake && shakeIntensity > 0) {
+        this.shakeAmount = shakeIntensity;
+      }
+
+      const targetWorldPosition = new THREE.Vector3();
+      this.target.getWorldPosition(targetWorldPosition);
+
+      const desiredPosition = targetWorldPosition.clone().add(this.offset);
+      this.currentPosition.lerp(desiredPosition, this.smoothness);
+
+      if (this.shakeAmount > 0.01) {
+        const shakeX = (Math.random() - 0.5) * this.shakeAmount;
+        const shakeY = (Math.random() - 0.5) * this.shakeAmount;
+        const shakeZ = (Math.random() - 0.5) * this.shakeAmount;
+
+        this.camera.position.set(
+          this.currentPosition.x + shakeX,
+          this.currentPosition.y + shakeY,
+          this.currentPosition.z + shakeZ
+        );
+
+        this.shakeAmount *= this.shakeDecay;
+      } else {
+        this.shakeAmount = 0;
+        this.camera.position.copy(this.currentPosition);
+      }
+
+      const desiredLookAt = targetWorldPosition.clone().add(this.lookAtOffset);
+      this.currentLookAt.lerp(desiredLookAt, this.smoothness);
+
+      this.camera.lookAt(this.currentLookAt);
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error updating camera:', error);
     }
-
-    const targetWorldPosition = new THREE.Vector3();
-    this.target.getWorldPosition(targetWorldPosition);
-
-    const desiredPosition = targetWorldPosition.clone().add(this.offset);
-    this.currentPosition.lerp(desiredPosition, this.smoothness);
-
-    if (this.shakeAmount > 0.01) {
-      const shakeX = (Math.random() - 0.5) * this.shakeAmount;
-      const shakeY = (Math.random() - 0.5) * this.shakeAmount;
-      const shakeZ = (Math.random() - 0.5) * this.shakeAmount;
-
-      this.camera.position.set(
-        this.currentPosition.x + shakeX,
-        this.currentPosition.y + shakeY,
-        this.currentPosition.z + shakeZ
-      );
-
-      this.shakeAmount *= this.shakeDecay;
-    } else {
-      this.shakeAmount = 0;
-      this.camera.position.copy(this.currentPosition);
-    }
-
-    const desiredLookAt = targetWorldPosition.clone().add(this.lookAtOffset);
-    this.currentLookAt.lerp(desiredLookAt, this.smoothness);
-
-    this.camera.lookAt(this.currentLookAt);
   }
 
   public reset(): void {
