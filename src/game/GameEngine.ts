@@ -36,33 +36,108 @@ export class GameEngine {
   private restartPending = false;
 
   constructor() {
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x000000);
-    this.scene.fog = new THREE.Fog(0x000000, 50, 200);
+    console.log('[ONE WRONG TURN] Initializing...');
+    try {
+      this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color(0x000000);
+      this.scene.fog = new THREE.Fog(0x000000, 50, 200);
+      console.log('[ONE WRONG TURN] Scene created');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error creating scene:', error);
+      throw error;
+    }
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    try {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      console.log('[ONE WRONG TURN] Renderer created');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error creating renderer:', error);
+      throw error;
+    }
 
-    const container = document.getElementById('game-container')!;
-    container.appendChild(this.renderer.domElement);
+    try {
+      const container = document.getElementById('game-container');
+      if (!container) {
+        throw new Error('Game container not found');
+      }
+      container.appendChild(this.renderer.domElement);
+      console.log('[ONE WRONG TURN] Canvas added to DOM');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error setting up canvas:', error);
+      throw error;
+    }
 
-    const selectedSkin = localStorage.getItem('selectedSkin') || 'default';
-    this.car = new Car(selectedSkin);
-    this.scene.add(this.car.getMesh());
+    try {
+      const selectedSkin = localStorage.getItem('selectedSkin') || 'default';
+      this.car = new Car(selectedSkin);
+      if (!this.car || !this.car.getMesh()) {
+        throw new Error('Failed to create car mesh');
+      }
+      this.scene.add(this.car.getMesh());
+      console.log('[ONE WRONG TURN] Car created');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error creating car:', error);
+      throw error;
+    }
 
-    this.road = new Road();
-    this.scene.add(this.road.getMesh());
+    try {
+      this.road = new Road();
+      if (!this.road || !this.road.getMesh()) {
+        throw new Error('Failed to create road mesh');
+      }
+      this.scene.add(this.road.getMesh());
+      console.log('[ONE WRONG TURN] Road generated');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error creating road:', error);
+      throw error;
+    }
 
-    this.collision = new Collision();
+    try {
+      this.collision = new Collision();
+      console.log('[ONE WRONG TURN] Collision system initialized');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error creating collision system:', error);
+      throw error;
+    }
 
-    this.camera = new Camera();
-    this.camera.setTarget(this.car.getMesh());
+    try {
+      this.camera = new Camera();
+      if (!this.camera || !this.camera.getCamera()) {
+        throw new Error('Failed to create camera');
+      }
+      this.camera.setTarget(this.car.getMesh());
+      console.log('[ONE WRONG TURN] Camera created');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error creating camera:', error);
+      throw error;
+    }
 
-    this.setupLights();
-    this.setupInputs();
-    this.handleResize();
+    try {
+      this.setupLights();
+      console.log('[ONE WRONG TURN] Lighting setup complete');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error setting up lights:', error);
+      throw error;
+    }
+
+    try {
+      this.setupInputs();
+      console.log('[ONE WRONG TURN] Input handlers registered');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error setting up inputs:', error);
+      throw error;
+    }
+
+    try {
+      this.handleResize();
+      console.log('[ONE WRONG TURN] Initial resize handled');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error handling initial resize:', error);
+      throw error;
+    }
   }
 
   private setupLights(): void {
@@ -235,65 +310,154 @@ export class GameEngine {
   }
 
   public init(): void {
-    this.animate(0);
+    try {
+      console.log('[ONE WRONG TURN] Starting game loop...');
+      this.animate(0);
+      console.log('[ONE WRONG TURN] Game loop started');
+      console.log('[ONE WRONG TURN] Game ready - press SPACE to start');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error initializing game loop:', error);
+      throw error;
+    }
   }
 
   private animate(time: number): void {
-    requestAnimationFrame((t) => this.animate(t));
+    try {
+      requestAnimationFrame((t) => this.animate(t));
 
-    let deltaTime = (time - this.lastTime) / 1000;
-    this.lastTime = time;
+      let deltaTime = (time - this.lastTime) / 1000;
+      this.lastTime = time;
 
-    if (deltaTime > 0.1) deltaTime = 0.1;
+      if (deltaTime > 0.1) deltaTime = 0.1;
 
-    if (this.state === 'playing') {
-      this.update(deltaTime);
-      this.camera.update(deltaTime, false, 0);
-    } else if (this.state === 'dead' && this.slowMotionActive) {
-      const slowDelta = deltaTime * 0.3;
-      this.slowMotionTimer += deltaTime;
+      if (this.state === 'playing') {
+        this.update(deltaTime);
+        if (this.camera) {
+          this.camera.update(deltaTime, false, 0);
+        }
+      } else if (this.state === 'dead' && this.slowMotionActive) {
+        const slowDelta = deltaTime * 0.3;
+        this.slowMotionTimer += deltaTime;
 
-      if (this.slowMotionTimer < 0.3) {
-        this.update(slowDelta);
-        this.camera.update(slowDelta, true, 10);
-      } else if (this.freezeTimer < 0.5) {
-        this.freezeTimer += deltaTime;
-        this.camera.update(0, true, 10);
-      } else {
-        this.slowMotionActive = false;
+        if (this.slowMotionTimer < 0.3) {
+          this.update(slowDelta);
+          if (this.camera) {
+            this.camera.update(slowDelta, true, 10);
+          }
+        } else if (this.freezeTimer < 0.5) {
+          this.freezeTimer += deltaTime;
+          if (this.camera) {
+            this.camera.update(0, true, 10);
+          }
+        } else {
+          this.slowMotionActive = false;
+        }
       }
-    }
 
-    this.renderer.render(this.scene, this.camera.getCamera());
+      if (this.renderer && this.scene && this.camera) {
+        this.renderer.render(this.scene, this.camera.getCamera());
+      }
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error in game loop:', error);
+      // Don't rethrow - keep the game loop running
+    }
   }
 
   private update(deltaTime: number): void {
-    const turnInput = (this.keys.left ? -1 : 0) + (this.keys.right ? 1 : 0);
-    this.car.update(deltaTime, turnInput);
+    try {
+      if (!this.car) {
+        console.error('[ONE WRONG TURN] Car not initialized in update');
+        return;
+      }
 
-    const carPos = this.car.getPosition();
-    this.road.update(carPos);
+      if (!this.road) {
+        console.error('[ONE WRONG TURN] Road not initialized in update');
+        return;
+      }
 
-    this.distanceTraveled += this.car.getSpeed() * deltaTime;
-    this.currentRunTime = (Date.now() - this.runStartTime) / 1000;
-    this.coinsThisRun = Math.floor(this.distanceTraveled / 10 + this.currentRunTime);
+      if (!this.collision) {
+        console.error('[ONE WRONG TURN] Collision system not initialized in update');
+        return;
+      }
 
-    this.uiManager?.updateHUD(this.currentRunTime, this.coinsThisRun);
+      const turnInput = (this.keys.left ? -1 : 0) + (this.keys.right ? 1 : 0);
+      this.car.update(deltaTime, turnInput);
 
-    const walls = this.road.getWalls();
-    const carBounds = this.car.getBounds();
+      const carPos = this.car.getPosition();
+      this.road.update(carPos);
 
-    if (this.collision.checkCollision(carBounds, walls)) {
+      this.distanceTraveled += this.car.getSpeed() * deltaTime;
+      this.currentRunTime = (Date.now() - this.runStartTime) / 1000;
+      this.coinsThisRun = Math.floor(this.distanceTraveled / 10 + this.currentRunTime);
+
+      this.uiManager?.updateHUD(this.currentRunTime, this.coinsThisRun);
+
+      const walls = this.road.getWalls();
+      const carBounds = this.car.getBounds();
+
+      if (this.collision.checkCollision(carBounds, walls)) {
+        this.handleCrash();
+      }
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error in update:', error);
       this.handleCrash();
     }
   }
 
   public updateCarSkin(skinId: string): void {
-    const oldMesh = this.car.getMesh();
-    this.scene.remove(oldMesh);
+    try {
+      if (!this.car || !this.camera) {
+        console.error('[ONE WRONG TURN] Cannot update car skin - objects not initialized');
+        return;
+      }
 
-    this.car = new Car(skinId);
-    this.scene.add(this.car.getMesh());
-    this.camera.setTarget(this.car.getMesh());
+      const oldMesh = this.car.getMesh();
+      this.scene.remove(oldMesh);
+
+      // Dispose old mesh and its children
+      oldMesh.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+
+      this.car = new Car(skinId);
+      this.scene.add(this.car.getMesh());
+      this.camera.setTarget(this.car.getMesh());
+
+      console.log('[ONE WRONG TURN] Car skin updated:', skinId);
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error updating car skin:', error);
+    }
+  }
+
+  public dispose(): void {
+    // Cleanup Three.js objects to prevent memory leaks
+    try {
+      if (this.renderer) {
+        this.renderer.dispose();
+      }
+
+      if (this.scene) {
+        this.scene.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            if (Array.isArray(child.material)) {
+              child.material.forEach((m) => m.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
+      console.log('[ONE WRONG TURN] Game disposed');
+    } catch (error) {
+      console.error('[ONE WRONG TURN] Error during disposal:', error);
+    }
   }
 }
