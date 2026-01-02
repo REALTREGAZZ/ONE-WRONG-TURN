@@ -9,33 +9,61 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      color: #00FF00;
+      z-index: 1000;
+      pointer-events: none;
+      color: #FF00FF;
       font-size: 18px;
       font-weight: bold;
       font-family: 'Courier New', monospace;
-      text-shadow: 0 0 10px #00FF00;
+      text-shadow: 0 0 10px #FF00FF, 0 0 20px #FF00FF;
+      line-height: 1.8;
     }
-    #death-message {
+    #death-screen {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      z-index: 999;
+      pointer-events: all;
       text-align: center;
-      color: #FF00FF;
-      font-size: 36px;
-      font-weight: bold;
+      color: #FF0033;
       font-family: 'Courier New', monospace;
-      text-shadow: 0 0 20px #FF00FF;
+      font-size: 48px;
+      font-weight: bold;
+      text-shadow: 0 0 20px #FF0033, 0 0 40px #FF00FF;
       display: none;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 40px;
+      border: 3px solid #00FFFF;
+      width: 80%;
+      max-width: 600px;
+    }
+    #death-message {
+      margin-bottom: 20px;
+    }
+    #death-stats {
+      font-size: 24px;
+      color: #00FFFF;
+    }
+    #death-hint {
+      font-size: 16px;
+      margin-top: 30px;
+      color: #00FFFF;
     }
   </style>
 </head>
 <body>
   <div id="hud">
+    <div id="distance">DISTANCE: 0m</div>
+    <div id="speed">SPEED: 50u/s</div>
+    <div id="roadwidth">WIDTH: 10.0u</div>
     <div id="time">TIME: 0.00s</div>
-    <div id="coins">COINS: 0</div>
   </div>
-  <div id="death-message"></div>
+  <div id="death-screen">
+    <div id="death-message">YOU TURNED TOO LATE.</div>
+    <div id="death-stats"></div>
+    <div id="death-hint">(PRESS ANY KEY TO RESTART)</div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
