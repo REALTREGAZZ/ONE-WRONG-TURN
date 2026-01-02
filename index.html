@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ONE WRONG TURN</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      background: #000;
+      color: #fff;
+    }
+
+    #game-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 10;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .screen h1 {
+      font-size: 4rem;
+      font-weight: bold;
+      margin-bottom: 2rem;
+      letter-spacing: 0.5rem;
+      text-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
+    }
+
+    .screen button {
+      background: rgba(255, 0, 255, 0.3);
+      border: 2px solid #ff00ff;
+      color: #fff;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      margin: 0.5rem;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .screen button:hover {
+      background: rgba(255, 0, 255, 0.6);
+      transform: scale(1.05);
+    }
+
+    .screen button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 2rem;
+      display: none;
+      justify-content: space-between;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .hud.active {
+      display: flex;
+    }
+
+    .hud-item {
+      font-size: 1.5rem;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    .death-message {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #ff0000;
+      text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+    }
+
+    .stats-container, .shop-container {
+      max-width: 600px;
+      width: 90%;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.5rem;
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(255, 0, 255, 0.1);
+      border: 1px solid rgba(255, 0, 255, 0.3);
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .shop-item {
+      background: rgba(255, 0, 255, 0.1);
+      border: 2px solid rgba(255, 0, 255, 0.3);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .shop-item.selected {
+      border-color: #00ff00;
+    }
+
+    .color-preview {
+      width: 100%;
+      height: 80px;
+      margin-bottom: 0.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .screen h1 {
+        font-size: 2rem;
+        letter-spacing: 0.3rem;
+      }
+
+      .screen button {
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+      }
+
+      .hud-item {
+        font-size: 1rem;
+      }
+
+      .death-message {
+        font-size: 2rem;
+      }
+
+      .stat-item {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="home-screen" class="screen active">
+      <h1>ONE WRONG TURN</h1>
+      <p style="font-size: 1.5rem; margin-bottom: 2rem;">Press SPACE or CLICK to Start</p>
+      <div id="best-time-preview" style="font-size: 1.2rem; margin-bottom: 2rem;"></div>
+      <div class="button-group">
+        <button id="btn-stats">Stats</button>
+        <button id="btn-shop">Shop</button>
+        <button id="btn-settings">Settings</button>
+      </div>
+    </div>
+
+    <div id="death-screen" class="screen">
+      <div class="death-message" id="death-message"></div>
+      <p style="font-size: 2rem; margin-bottom: 1rem;">Time: <span id="run-time">0</span>s</p>
+      <p style="font-size: 1.5rem; margin-bottom: 2rem;">Coins: +<span id="coins-earned">0</span></p>
+      <p style="font-size: 1.2rem; opacity: 0.7;">Press any key to restart</p>
+    </div>
+
+    <div id="stats-screen" class="screen">
+      <h1 style="font-size: 3rem;">STATS</h1>
+      <div class="stats-container">
+        <div class="stat-item">
+          <span>Best Run:</span>
+          <span id="stat-best-time">0s</span>
+        </div>
+        <div class="stat-item">
+          <span>Total Crashes:</span>
+          <span id="stat-crashes">0</span>
+        </div>
+        <div class="stat-item">
+          <span>Total Attempts:</span>
+          <span id="stat-attempts">0</span>
+        </div>
+        <div class="stat-item">
+          <span>Total Coins:</span>
+          <span id="stat-coins">0</span>
+        </div>
+      </div>
+      <button id="btn-back-stats">Back</button>
+    </div>
+
+    <div id="shop-screen" class="screen">
+      <h1 style="font-size: 3rem;">SHOP</h1>
+      <div class="stats-container">
+        <div class="stat-item">
+          <span>Your Coins:</span>
+          <span id="shop-coin-balance">0</span>
+        </div>
+        <div id="shop-grid" class="shop-grid"></div>
+      </div>
+      <button id="btn-back-shop">Back</button>
+    </div>
+
+    <div id="settings-screen" class="screen">
+      <h1 style="font-size: 3rem;">SETTINGS</h1>
+      <div class="stats-container">
+        <div class="stat-item" style="cursor: pointer;" id="audio-toggle">
+          <span>Audio:</span>
+          <span id="audio-status">ON</span>
+        </div>
+      </div>
+      <button id="btn-back-settings">Back</button>
+    </div>
+
+    <div class="hud" id="game-hud">
+      <div class="hud-item">Time: <span id="hud-time">0</span>s</div>
+      <div class="hud-item">Coins: <span id="hud-coins">0</span></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
