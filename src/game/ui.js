@@ -2,16 +2,18 @@ import { pickRandom } from './helpers.js';
 import { DEATH_MESSAGES } from './config.js';
 
 export class UI {
-  constructor({ onRestart, onPointerSteer, onMenuClick }) {
+  constructor({ onRestart, onPointerSteer, onMenuClick, onModeSelect }) {
     this.onRestart = onRestart;
     this.onPointerSteer = onPointerSteer;
     this.onMenuClick = onMenuClick;
+    this.onModeSelect = onModeSelect;
 
     this.menuOverlay = document.getElementById('menu-overlay');
     this.crashOverlay = document.getElementById('crash-overlay');
     this.shopOverlay = document.getElementById('shop-overlay');
     this.statsOverlay = document.getElementById('stats-overlay');
     this.hudOverlay = document.getElementById('hud-overlay');
+    this.modeOverlay = document.getElementById('mode-overlay');
 
     this.elTouchControls = document.getElementById('touch-controls');
     this.elTouchLeft = document.getElementById('touch-left');
@@ -159,11 +161,16 @@ export class UI {
     }, 1000);
   }
 
-  updateStats(distance, speed, highscore, lastRun) {
+  updateStats(distance, speed, highscore, lastRun, gameMode) {
     document.getElementById('stat-distance').textContent = Math.floor(distance) + 'M';
     document.getElementById('stat-speed').textContent = Math.floor(speed);
     document.getElementById('stat-highscore').textContent = Math.floor(highscore) + 'M';
     document.getElementById('stat-lastrun').textContent = Math.floor(lastRun) + 'M';
+    
+    if (gameMode) {
+      const modeText = gameMode === 'hard' ? 'HARD' : 'NORMAL';
+      document.getElementById('stat-mode').textContent = modeText;
+    }
   }
 
   setHintVisible(visible) {
@@ -189,5 +196,15 @@ export class UI {
 
   hideStats() {
     this.statsOverlay.classList.add('hidden');
+  }
+
+  showModeSelect() {
+    this.mode = 'mode-select';
+    this.modeOverlay.classList.remove('hidden');
+    this.menuOverlay.classList.add('hidden');
+  }
+
+  hideModeSelect() {
+    this.modeOverlay.classList.add('hidden');
   }
 }
