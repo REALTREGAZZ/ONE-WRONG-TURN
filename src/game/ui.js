@@ -195,4 +195,15 @@ export class UI {
   hideModeSelect() {
     this.modeOverlay.classList.add('hidden');
   }
+  
+  showMenu() {
+    this.mode = 'menu';
+    this.menuOverlay.classList.remove('hidden');
+    this.hudOverlay.classList.add('hidden');
+  }
+
+  hideMenu() {
+    this.menuOverlay.classList.add('hidden');
+    this.hudOverlay.classList.remove('hidden');
+  }
 }

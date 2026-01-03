@@ -32,48 +32,14 @@ export const SHOP_ITEMS = {
       color: 0xff6b35,
       description: 'Leave a trail of fire.'
     }
-  ],
-  accessories: [
-    {
-      id: 'neon-stripes',
-      name: 'Neon Stripes',
-      price: 100,
-      owned: false,
-      type: 'stripe',
-      description: 'Racing stripes glow.'
-    },
-    {
-      id: 'spoiler-carbon',
-      name: 'Carbon Spoiler',
-      price: 150,
-      owned: false,
-      type: 'spoiler',
-      description: 'Aerodynamic edge.'
-    },
-    {
-      id: 'wheels-chrome',
-      name: 'Chrome Wheels',
-      price: 200,
-      owned: false,
-      type: 'wheels',
-      description: 'Shiny metal rims.'
-    },
-    {
-      id: 'underglow-cyan',
-      name: 'Cyan Underglow',
-      price: 250,
-      owned: false,
-      type: 'underglow',
-      description: 'Light trails beneath.'
-    }
   ]
+  // Accessories removed - keeping only skins
 };
 
 export class ShopSystem {
   constructor(coinSystem) {
     this.coinSystem = coinSystem;
     this.selectedSkin = 'yellow-neon';
-    this.selectedAccessories = [];
     this.loadProgress();
   }
   
@@ -93,9 +59,6 @@ export class ShopSystem {
     for (const item of SHOP_ITEMS.skins) {
       if (item.id === itemId) return item;
     }
-    for (const item of SHOP_ITEMS.accessories) {
-      if (item.id === itemId) return item;
-    }
     return null;
   }
   
@@ -109,24 +72,6 @@ export class ShopSystem {
     return false;
   }
   
-  toggleAccessory(accessoryId) {
-    const acc = SHOP_ITEMS.accessories.find(a => a.id === accessoryId);
-    if (!acc || !acc.owned) return false;
-    
-    const index = this.selectedAccessories.indexOf(accessoryId);
-    if (index > -1) {
-      this.selectedAccessories.splice(index, 1);
-    } else {
-      this.selectedAccessories.push(accessoryId);
-    }
-    this.saveProgress();
-    return true;
-  }
-  
-  isAccessoryActive(accessoryId) {
-    return this.selectedAccessories.includes(accessoryId);
-  }
-  
   getSelectedSkinColor() {
     const skin = SHOP_ITEMS.skins.find(s => s.id === this.selectedSkin);
     return skin ? skin.color : 0xffff00;
@@ -134,8 +79,7 @@ export class ShopSystem {
   
   saveProgress() {
     localStorage.setItem('owt_shop', JSON.stringify({
-      selectedSkin: this.selectedSkin,
-      selectedAccessories: this.selectedAccessories
+      selectedSkin: this.selectedSkin
     }));
   }
   
@@ -145,7 +89,6 @@ export class ShopSystem {
       try {
         const data = JSON.parse(saved);
         this.selectedSkin = data.selectedSkin || 'yellow-neon';
-        this.selectedAccessories = data.selectedAccessories || [];
       } catch (e) {
         console.warn('Could not load shop progress');
       }
