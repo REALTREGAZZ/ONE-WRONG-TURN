@@ -52,6 +52,43 @@ body {
   gap: 20px;
 }
 
+.hud-top-right {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  pointer-events: auto;
+}
+
+.fixed-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.btn-icon {
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid var(--color-secondary);
+  color: var(--color-secondary);
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: var(--color-secondary);
+  color: var(--color-bg);
+  box-shadow: 0 0 30px var(--color-secondary);
+}
+
 .stat-item {
   background: rgba(0, 0, 0, 0.7);
   border: 2px solid var(--color-secondary);

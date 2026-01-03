@@ -3,6 +3,9 @@ export class AudioManager {
     this.ctx = null;
     this.master = null;
     this.enabled = true;
+    this.musicPlaying = false;
+    this.musicTimer = null;
+    this.noiseBuffer = null;
 
     this._ensureFromGesture = this._ensureFromGesture.bind(this);
     window.addEventListener('pointerdown', this._ensureFromGesture, { once: true });
@@ -10,7 +13,7 @@ export class AudioManager {
   }
 
   async _ensureFromGesture() {
-    if (!this.enabled || this.ctx) return;
+    if (this.ctx) return;
 
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextCtor) return;
@@ -20,15 +23,21 @@ export class AudioManager {
     this.master.gain.value = 0.25;
     this.master.connect(this.ctx.destination);
 
+    // Pre-create noise buffer for snare
+    this.noiseBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.1, this.ctx.sampleRate);
+    const data = this.noiseBuffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+
     try {
       if (this.ctx.state === 'suspended') await this.ctx.resume();
+      if (this.enabled) this.startMusic();
     } catch {
       // ignore
     }
   }
 
   _beep({ freq = 440, duration = 0.08, type = 'square', gain = 0.8 } = {}) {
-    if (!this.ctx || !this.master) return;
+    if (!this.ctx || !this.master || !this.enabled) return;
 
     const osc = this.ctx.createOscillator();
     const g = this.ctx.createGain();
@@ -51,7 +60,7 @@ export class AudioManager {
   }
 
   playCrash() {
-    if (!this.ctx || !this.master) return;
+    if (!this.ctx || !this.master || !this.enabled) return;
 
     const now = this.ctx.currentTime;
     const out = this.ctx.createGain();
@@ -132,5 +141,114 @@ export class AudioManager {
 
   playGraze() {
     this._beep({ freq: 280, duration: 0.03, type: 'square', gain: 0.35 });
+  }
+
+  _kick(t) {
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.5);
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    osc.start(t);
+    osc.stop(t + 0.5);
+  }
+
+  _snare(t) {
+    if (!this.noiseBuffer) return;
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = this.noiseBuffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(1000, t);
+    
+    const gain = this.ctx.createGain();
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.master);
+    
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+    
+    noise.start(t);
+    noise.stop(t + 0.1);
+  }
+
+  _bass(t, freq) {
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, t);
+    
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(200, t);
+    filter.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.master);
+    
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    
+    osc.start(t);
+    osc.stop(t + 0.2);
+  }
+
+  startMusic() {
+    if (!this.ctx || this.musicPlaying || !this.enabled) return;
+    this.musicPlaying = true;
+    
+    const tempo = 115;
+    const beatLen = 60 / tempo;
+    let nextBeat = this.ctx.currentTime + 0.1;
+    let beatCount = 0;
+
+    const schedule = () => {
+      if (!this.musicPlaying) return;
+      while (nextBeat < this.ctx.currentTime + 0.2) {
+        // Kick on every beat
+        this._kick(nextBeat);
+        
+        // Snare on 2 and 4
+        if (beatCount % 4 === 1 || beatCount % 4 === 3) {
+          this._snare(nextBeat);
+        }
+        
+        // Driving Bass (8th notes)
+        const bassFreqs = [41.20, 41.20, 48.99, 48.99, 55.00, 55.00, 48.99, 61.74]; // E1, G1, A1, G1, B1...
+        const freq = bassFreqs[Math.floor(beatCount / 2) % bassFreqs.length];
+        this._bass(nextBeat, freq);
+        this._bass(nextBeat + beatLen/2, freq);
+
+        nextBeat += beatLen;
+        beatCount++;
+      }
+      this.musicTimer = setTimeout(schedule, 100);
+    };
+    schedule();
+  }
+
+  stopMusic() {
+    this.musicPlaying = false;
+    if (this.musicTimer) {
+      clearTimeout(this.musicTimer);
+      this.musicTimer = null;
+    }
+  }
+
+  toggleAudio() {
+    this.enabled = !this.enabled;
+    if (this.enabled) {
+      this.startMusic();
+    } else {
+      this.stopMusic();
+    }
+    return this.enabled;
   }
 }

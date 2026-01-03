@@ -43,6 +43,18 @@ export class UI {
       this.onMenuClick?.();
     });
 
+    document.getElementById('btn-back-stats')?.addEventListener('click', () => {
+      this.onMenuClick?.();
+    });
+
+    document.getElementById('btn-back-shop')?.addEventListener('click', () => {
+      this.onMenuClick?.();
+    });
+
+    document.getElementById('btn-back-mode')?.addEventListener('click', () => {
+      this.onMenuClick?.();
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !this.crashOverlay.classList.contains('hidden')) {
         e.preventDefault();
@@ -109,6 +121,10 @@ export class UI {
     this.mode = 'menu';
     this.menuOverlay.classList.remove('hidden');
     this.hudOverlay.classList.add('hidden');
+    this.crashOverlay.classList.add('hidden');
+    this.statsOverlay.classList.add('hidden');
+    this.modeOverlay.classList.add('hidden');
+    this.shopOverlay.classList.add('hidden');
   }
 
   hideMenu() {
@@ -256,16 +272,5 @@ export class UI {
 
       container.appendChild(card);
     });
-  }
-  
-  showMenu() {
-    this.mode = 'menu';
-    this.menuOverlay.classList.remove('hidden');
-    this.hudOverlay.classList.add('hidden');
-  }
-
-  hideMenu() {
-    this.menuOverlay.classList.add('hidden');
-    this.hudOverlay.classList.remove('hidden');
   }
 }

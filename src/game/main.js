@@ -489,16 +489,11 @@ document.getElementById('btn-stats')?.addEventListener('click', () => {
   showStats();
 });
 
-document.getElementById('btn-back-stats')?.addEventListener('click', () => {
-  showMenu();
-});
-
-document.getElementById('btn-back-shop')?.addEventListener('click', () => {
-  showMenu();
-});
-
-document.getElementById('btn-back-mode')?.addEventListener('click', () => {
-  showMenu();
+document.getElementById('btn-toggle-audio')?.addEventListener('click', () => {
+  const isEnabled = audio.toggleAudio();
+  const icon = document.getElementById('audio-icon');
+  if (icon) icon.textContent = isEnabled ? '🔊' : '🔈';
+  audio.playClick();
 });
 
 // Mode selection handlers
