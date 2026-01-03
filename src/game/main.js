@@ -115,6 +115,11 @@ let lastRun = 0;
 let gamesPlayed = Number(localStorage.getItem('owt_games_played') || '0');
 let totalDistance = Number(localStorage.getItem('owt_total_distance') || '0');
 
+// Game mode state
+let currentGameMode = localStorage.getItem('owt_selected_mode') || 'normal';
+let normalModeCompleted = localStorage.getItem('owt_normal_completed') === 'true';
+let hardModeUnlocked = normalModeCompleted;
+
 let hintT = 4.0;
 let pulseTime = 0;
 
@@ -132,9 +137,44 @@ const shopSystem = new ShopSystem(coinSystem);
 // Guardar SHOP_ITEMS en CONFIG para acceso global
 CONFIG.SHOP_ITEMS = SHOP_ITEMS;
 
+// Apply game mode configuration to CONFIG
+function applyGameModeConfig(modeId) {
+  const modeConfig = CONFIG.gameModes[modeId];
+  if (!modeConfig) return;
+
+  // Apply difficulty settings
+  CONFIG.difficulty = { ...modeConfig.difficulty };
+
+  // Apply curve settings
+  if (modeConfig.curve) {
+    CONFIG.curve = { ...modeConfig.curve };
+  }
+
+  // Apply road settings
+  if (modeConfig.road) {
+    CONFIG.road.baseWidth = modeConfig.road.baseWidth;
+    CONFIG.road.minWidth = modeConfig.road.minWidth;
+  }
+
+  // Apply turn settings
+  if (modeConfig.turns) {
+    CONFIG.turns.baseInterval = modeConfig.turns.baseInterval;
+    CONFIG.turns.minInterval = modeConfig.turns.minInterval;
+    CONFIG.turns.baseDeltaX = modeConfig.turns.baseDeltaX;
+    CONFIG.turns.maxDeltaX = modeConfig.turns.maxDeltaX;
+  }
+
+  // Update car speed limits
+  CONFIG.car.baseSpeed = CONFIG.difficulty.speed.baseSpeed;
+  CONFIG.car.maxSpeed = CONFIG.difficulty.speed.maxSpeed;
+
+  console.log(`Game mode applied: ${modeId}`, CONFIG.difficulty);
+}
+
 const ui = new UI({
   onRestart: () => restart(),
   onMenuClick: () => showMenu(),
+  onModeSelect: (modeId) => selectGameMode(modeId),
   onPointerSteer: (steer) => {
     if (mode !== 'playing') return;
     pointerSteer = steer;
@@ -282,6 +322,14 @@ function crash() {
     localStorage.setItem('owt_best', String(best));
   }
   
+  // Check if Normal Mode was completed (reached at least 100m) to unlock Hard Mode
+  if (currentGameMode === 'normal' && distance >= 100 && !normalModeCompleted) {
+    normalModeCompleted = true;
+    hardModeUnlocked = true;
+    localStorage.setItem('owt_normal_completed', 'true');
+    console.log('Normal Mode completed! Hard Mode unlocked!');
+  }
+  
   localStorage.setItem('owt_games_played', String(gamesPlayed));
   localStorage.setItem('owt_total_distance', String(totalDistance));
   
@@ -334,6 +382,61 @@ function completeRestart() {
   gameplayStart();
 }
 
+function selectGameMode(modeId) {
+  // Check if mode is unlocked
+  if (modeId === 'hard' && !hardModeUnlocked) {
+    console.log('Hard Mode is locked!');
+    return;
+  }
+
+  currentGameMode = modeId;
+  localStorage.setItem('owt_selected_mode', modeId);
+  
+  // Apply the mode configuration
+  applyGameModeConfig(modeId);
+  
+  // Recreate world with new config
+  world.reset();
+  
+  console.log(`Mode selected: ${modeId}`);
+  
+  // Start the game
+  startRun();
+}
+
+function showModeSelect() {
+  mode = 'mode-select';
+  ui.showModeSelect();
+  
+  // Update mode card states
+  updateModeCards();
+}
+
+function updateModeCards() {
+  const normalCard = document.getElementById('mode-normal');
+  const hardCard = document.getElementById('mode-hard');
+  const hardLockedOverlay = hardCard?.querySelector('.mode-locked');
+  
+  // Update selected state
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.classList.remove('selected');
+    if (card.dataset.mode === currentGameMode) {
+      card.classList.add('selected');
+    }
+  });
+  
+  // Update hard mode lock state
+  if (hardCard && hardLockedOverlay) {
+    if (hardModeUnlocked) {
+      hardCard.classList.remove('locked');
+      hardLockedOverlay.classList.add('hidden');
+    } else {
+      hardCard.classList.add('locked');
+      hardLockedOverlay.classList.remove('hidden');
+    }
+  }
+}
+
 function startRun() {
   mode = 'playing';
   freezeT = 0;
@@ -359,6 +462,7 @@ function startRun() {
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
   ui.hideMenu();
+  ui.hideModeSelect();
 
   gameplayStart();
 }
@@ -424,7 +528,7 @@ window.addEventListener('keyup', (e) => {
 });
 
 document.getElementById('btn-start')?.addEventListener('click', () => {
-  startRun();
+  showModeSelect();
 });
 
 document.getElementById('btn-shop')?.addEventListener('click', () => {
@@ -441,6 +545,20 @@ document.getElementById('btn-back-shop')?.addEventListener('click', () => {
 
 document.getElementById('btn-back-stats')?.addEventListener('click', () => {
   showMenu();
+});
+
+document.getElementById('btn-back-mode')?.addEventListener('click', () => {
+  showMenu();
+});
+
+// Mode selection handlers
+document.querySelectorAll('.mode-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const modeId = card.dataset.mode;
+    if (modeId) {
+      selectGameMode(modeId);
+    }
+  });
 });
 
 // Tabs de tienda
@@ -522,14 +640,14 @@ function frame(ts) {
 
     if (collision.crashed) crash();
 
-    ui.updateStats(distance, speed, best, lastRun);
+    ui.updateStats(distance, speed, best, lastRun, currentGameMode);
 
     wheelTrails.update(simDt, car, speed, CONFIG.difficulty.speed.maxSpeed);
     speedLines.emit(speedRatio);
     speedLines.update(simDt, speedRatio);
     sparks.update(simDt);
 
-    followCamera.updateVelocityShake(dtRaw, speed, CONFIG.difficulty.speed.maxSpeed);
+    followCamera.updateVelocityShake(dtRaw, speedRatio);
     followCamera.update(dtRaw, car.group, speedRatio);
   } else {
     followCamera.update(dtRaw, car.group, 0);
@@ -541,6 +659,9 @@ function frame(ts) {
 
   renderer.render(scene, camera);
 }
+
+// Apply initial game mode configuration
+applyGameModeConfig(currentGameMode);
 
 // Aplicar skin inicial
 car.applySkin(shopSystem.selectedSkin);

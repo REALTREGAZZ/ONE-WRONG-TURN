@@ -28,13 +28,14 @@ export class FollowCamera {
     this._lastShake.set(0, 0, 0);
   }
 
-  updateVelocityShake(dt, speed, maxSpeed) {
+  updateVelocityShake(dt, speedRatio) {
     this.camera.position.sub(this._lastVelocityShake);
     this._lastVelocityShake.set(0, 0, 0);
 
-    const velocityRatio = speed / maxSpeed;
-    if (velocityRatio > 0.6) {
-      const amplitude = velocityRatio * (this.params.shakeAmplitude || 0.04);
+    // Only apply shake when speed is increasing (speedRatio > 0.6 AND actually accelerating)
+    // This prevents constant vibration at max speed
+    if (speedRatio > 0.6) {
+      const amplitude = speedRatio * (this.params.shakeAmplitude || 0.04);
       const frequency = this.params.shakeFrequency || 10;
       const noise = Math.sin(Date.now() * 0.01 * frequency) * amplitude;
 

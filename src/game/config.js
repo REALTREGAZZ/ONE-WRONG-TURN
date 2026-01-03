@@ -56,13 +56,70 @@ export const CONFIG = {
       },
     },
   },
+  // Game mode configurations
+  gameModes: {
+    normal: {
+      name: 'NORMAL MODE',
+      description: 'Constant speed, fixed road width. Pure skill test.',
+      unlocked: true,
+      difficulty: {
+        maxDistance: 800,
+        speed: {
+          baseSpeed: 25,
+          incrementPerSecond: 0,
+          maxSpeed: 25,
+        },
+      },
+      curve: {
+        widthDecrease: 0, // NO narrowing in normal mode
+        sharpnessIncrease: 0, // NO turn sharpness increase
+      },
+      road: {
+        baseWidth: 5.2,
+        minWidth: 5.2, // Fixed width
+      },
+      turns: {
+        baseInterval: 44,
+        minInterval: 44, // Consistent turn frequency
+        baseDeltaX: 4.2,
+        maxDeltaX: 8.5, // Moderate turns
+      },
+    },
+    hard: {
+      name: 'HARD MODE',
+      description: 'Speed ramps, narrowing road, sharper turns. Pure chaos.',
+      unlocked: false,
+      difficulty: {
+        maxDistance: 800,
+        speed: {
+          baseSpeed: 25,
+          incrementPerSecond: 0.25, // Gradual speed increase
+          maxSpeed: 45, // Higher max speed
+        },
+      },
+      curve: {
+        widthDecrease: 0.00333, // 5% per 15 seconds
+        sharpnessIncrease: 0.01, // 10% per 10 seconds
+      },
+      road: {
+        baseWidth: 5.2,
+        minWidth: 4.0, // Narrows over time
+      },
+      turns: {
+        baseInterval: 44,
+        minInterval: 8, // Much more frequent turns
+        baseDeltaX: 3.0, // Sharper initial turns
+        maxDeltaX: 12, // Much sharper max turns
+      },
+    },
+  },
   difficulty: {
-    // Moderate speed curve for balanced gameplay
+    // Default difficulty (will be overridden by game mode)
     maxDistance: 800,
     speed: {
-      baseSpeed: 25, // Base 25 units/sec (moderate)
-      incrementPerSecond: 0, // NO acceleration
-      maxSpeed: 25, // Lock at 25 units/sec
+      baseSpeed: 25,
+      incrementPerSecond: 0,
+      maxSpeed: 25,
     }
   },
   car: {

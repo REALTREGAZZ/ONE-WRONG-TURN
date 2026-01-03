@@ -15,6 +15,10 @@
         <!-- Top Left: Stats -->
         <div class="hud-top-left">
           <div class="stat-item">
+            <label>MODE</label>
+            <value id="stat-mode">NORMAL</value>
+          </div>
+          <div class="stat-item">
             <label>HIGHSCORE</label>
             <value id="stat-highscore">0M</value>
           </div>
@@ -97,6 +101,41 @@
               <value id="menu-coins">0</value>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Mode Selection Overlay -->
+      <div id="mode-overlay" class="mode-overlay hidden">
+        <div class="mode-container">
+          <h2>SELECT GAME MODE</h2>
+          
+          <div class="mode-selector">
+            <div class="mode-card" id="mode-normal" data-mode="normal">
+              <div class="mode-name">NORMAL MODE</div>
+              <div class="mode-description">Constant speed, fixed road width. Pure skill test.</div>
+              <div class="mode-stats">
+                <div class="mode-stat">Speed: <span class="highlight">25 u/s</span></div>
+                <div class="mode-stat">Road: <span class="highlight">Fixed Width</span></div>
+                <div class="mode-stat">Turns: <span class="highlight">Moderate</span></div>
+              </div>
+            </div>
+            
+            <div class="mode-card" id="mode-hard" data-mode="hard">
+              <div class="mode-name">HARD MODE</div>
+              <div class="mode-description">Speed ramps, narrowing road, sharper turns. Pure chaos.</div>
+              <div class="mode-stats">
+                <div class="mode-stat">Speed: <span class="highlight">25 → 45 u/s</span></div>
+                <div class="mode-stat">Road: <span class="highlight">Narrowing</span></div>
+                <div class="mode-stat">Turns: <span class="highlight">Aggressive</span></div>
+              </div>
+              <div class="mode-locked hidden">
+                <div class="lock-icon">🔒</div>
+                <div class="lock-text">Complete Normal Mode to unlock</div>
+              </div>
+            </div>
+          </div>
+          
+          <button id="btn-back-mode" class="btn btn-back">BACK</button>
         </div>
       </div>
       
