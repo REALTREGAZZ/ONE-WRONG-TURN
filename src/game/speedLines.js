@@ -1,10 +1,14 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
 export class SpeedLines {
-  constructor(scene, config) {
+  constructor(scene, config, performanceTier = 'HIGH') {
     this.config = config;
+    this.performanceTier = performanceTier;
     this.particles = [];
     this.spawnAccumulator = 0;
+
+    // Particle pooling configuration
+    this.maxParticles = performanceTier === 'LOW' ? 15 : (performanceTier === 'MEDIUM' ? 30 : 50);
 
     const geometry = new THREE.PlaneGeometry(
       config.particleSize.width,
@@ -17,7 +21,7 @@ export class SpeedLines {
       depthWrite: false,
     });
 
-    this.mesh = new THREE.InstancedMesh(geometry, material, 200);
+    this.mesh = new THREE.InstancedMesh(geometry, material, this.maxParticles);
     this.mesh.count = 0;
     this.mesh.visible = false;
     scene.add(this.mesh);

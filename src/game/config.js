@@ -223,6 +223,73 @@ export const CONFIG = {
   SHOP_ITEMS: {}, // Se llenará desde main.js
 };
 
+// Performance Tier Configuration
+export const PERFORMANCE_CONFIG = {
+  LOW: {
+    pixelRatio: 1.0,
+    maxParticles: 30,
+    maxParticlesSparks: 15,
+    maxParticlesSpeedLines: 15,
+    buildingLOD: {
+      farDistance: 8,
+      midDistance: 4,
+      nearDistance: 2,
+      maxBuildings: 80
+    },
+    roadSegments: 80,
+    renderScale: 0.6,
+    disableWheelTrails: true,
+    speedLinesRate: 0.3, // 30% of normal rate
+    sparkRate: 0.3, // 30% of normal rate
+    audioMaxPolyphony: 4,
+    gradientRes: 256,
+    fogNear: 8,
+    fogFar: 120
+  },
+  MEDIUM: {
+    pixelRatio: 1.2,
+    maxParticles: 60,
+    maxParticlesSparks: 30,
+    maxParticlesSpeedLines: 30,
+    buildingLOD: {
+      farDistance: 12,
+      midDistance: 8,
+      nearDistance: 4,
+      maxBuildings: 120
+    },
+    roadSegments: 120,
+    renderScale: 0.8,
+    disableWheelTrails: false,
+    speedLinesRate: 0.7, // 70% of normal rate
+    sparkRate: 0.7, // 70% of normal rate
+    audioMaxPolyphony: 6,
+    gradientRes: 512,
+    fogNear: 10,
+    fogFar: 150
+  },
+  HIGH: {
+    pixelRatio: 2.0,
+    maxParticles: 100,
+    maxParticlesSparks: 50,
+    maxParticlesSpeedLines: 50,
+    buildingLOD: {
+      farDistance: 18,
+      midDistance: 12,
+      nearDistance: 6,
+      maxBuildings: 150
+    },
+    roadSegments: 150,
+    renderScale: 1.0,
+    disableWheelTrails: false,
+    speedLinesRate: 1.0, // 100% of normal rate
+    sparkRate: 1.0, // 100% of normal rate
+    audioMaxPolyphony: 8,
+    gradientRes: 512,
+    fogNear: 12,
+    fogFar: 180
+  }
+};
+
 export const DEATH_MESSAGES = [
   'TOO GREEDY',
   'OUCH!',

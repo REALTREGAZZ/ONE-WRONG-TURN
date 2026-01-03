@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { CONFIG, DEATH_MESSAGES } from './config.js';
+import { CONFIG, DEATH_MESSAGES, PERFORMANCE_CONFIG } from './config.js';
 import { difficulty01, lerp, pickRandom } from './helpers.js';
 import { World } from './world.js';
 import { Car } from './car.js';
@@ -17,8 +17,92 @@ import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
 
 const app = document.getElementById('app');
 
-// Mobile detection for performance optimizations
+// Device detection and performance monitoring
+const frameTimes = [];
+const PERFORMANCE_SAMPLE_COUNT = 30;
+let currentFPS = 60;
+let performanceTier = 'HIGH';
+let adaptiveQualityEnabled = true;
+let consecutiveFrameDrops = 0;
+let adaptiveRenderScale = 1.0;
+
+// Mobile detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+// Device capability detection
+function detectDeviceCapabilities() {
+  // Memory profiling
+  const memoryInfo = navigator.deviceMemory;
+  const estimatedMemory = memoryInfo || (isMobile ? 4 : 8); // Guess if unavailable
+  
+  // Hardware concurrency
+  const cpuCores = navigator.hardwareConcurrency || 4;
+  
+  // Screen size
+  const screenLarge = window.innerWidth > 1024; // Desktop/laptop
+  
+  // Low-end detection heuristics
+  const isLowEnd = (
+    estimatedMemory < 3 ||
+    cpuCores <= 2 ||
+    !window.WebGL2RenderingContext ||
+    isMobile && window.innerWidth < 768
+  );
+  
+  // Assign tier
+  if (isLowEnd || !isMobile && estimatedMemory < 4) {
+    performanceTier = 'LOW';
+  } else if (isMobile || estimatedMemory < 6) {
+    performanceTier = 'MEDIUM';
+  } else {
+    performanceTier = 'HIGH';
+  }
+  
+  console.log(`Device detection - Tier: ${performanceTier}, Memory: ${estimatedMemory}GB, Cores: ${cpuCores}, Mobile: ${isMobile}`);
+}
+
+// Performance monitoring
+function updatePerformanceMetrics(deltaTime) {
+  frameTimes.push(deltaTime);
+  if (frameTimes.length > PERFORMANCE_SAMPLE_COUNT) {
+    frameTimes.shift();
+  }
+  
+  // Calculate running average framerate
+  if (frameTimes.length >= 10) {
+    const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    currentFPS = avgFrameTime > 0 ? Math.round(1 / avgFrameTime) : 60;
+    
+    // Track consecutive frame drops (below 50fps)
+    if (currentFPS < 50) {
+      consecutiveFrameDrops++;
+    } else {
+      consecutiveFrameDrops = Math.max(0, consecutiveFrameDrops - 1);
+    }
+    
+    // Adaptive quality scaling
+    if (adaptiveQualityEnabled) {
+      if (consecutiveFrameDrops > 10 && adaptiveRenderScale > 0.6) {
+        adaptiveRenderScale = Math.max(0.6, adaptiveRenderScale - 0.1);
+        console.log(`Performance dropping, reducing render scale to ${adaptiveRenderScale.toFixed(2)}`);
+        updateRendererScale();
+      }
+    }
+  }
+}
+
+function updateRendererScale() {
+  const config = PERFORMANCE_CONFIG[performanceTier];
+  const finalScale = config.renderScale * adaptiveRenderScale;
+  const width = Math.floor(window.innerWidth * finalScale);
+  const height = Math.floor(window.innerHeight * finalScale);
+  renderer.setSize(width, height, false);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, config.pixelRatio));
+}
+
+// Initialize device detection before renderer setup
+detectDeviceCapabilities();
+const perfConfig = PERFORMANCE_CONFIG[performanceTier];
 
 const renderer = new THREE.WebGLRenderer({
   antialias: false,
@@ -26,9 +110,12 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance',
 });
 
-// Adjust pixel ratio for mobile vs desktop
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+// Set initial renderer scale based on device tier
+const initialRenderScale = perfConfig.renderScale;
+const width = Math.floor(window.innerWidth * initialRenderScale);
+const height = Math.floor(window.innerHeight * initialRenderScale);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, perfConfig.pixelRatio));
+renderer.setSize(width, height, false);
 renderer.setClearColor(0x0a0a0f, 1);
 
 renderer.domElement.style.position = 'absolute';
@@ -44,8 +131,9 @@ const scene = new THREE.Scene();
 // Create aggressive synthwave gradient background
 function createGradientTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  const resolution = perfConfig.gradientRes;
+  canvas.width = resolution;
+  canvas.height = resolution;
   const ctx = canvas.getContext('2d');
 
   const toCssHex = (hex) => `#${hex.toString(16).padStart(6, '0')}`;
@@ -65,7 +153,7 @@ function createGradientTexture() {
 }
 
 scene.background = createGradientTexture();
-scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
+scene.fog = new THREE.Fog(CONFIG.synthwave.fog, perfConfig.fogNear, perfConfig.fogFar);
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
 
@@ -94,14 +182,33 @@ const audio = new AudioManager();
 const coinSystem = new CoinSystem();
 const shopSystem = new ShopSystem(coinSystem);
 
-const world = new World(scene, CONFIG);
+const world = new World(scene, CONFIG, performanceTier);
 const car = new Car(CONFIG);
 scene.add(car.group);
 
+// Apply performance tier to particle systems
+let speedLinesConfig = { ...CONFIG.speedLines };
+let sparksConfig = { ...CONFIG.sparks };
+let wheelTrailsConfig = { ...CONFIG.wheelTrails };
+
+// Adjust particle emissions based on performance tier
+if (performanceTier !== 'HIGH') {
+  const rateMultiplier = PERFORMANCE_CONFIG[performanceTier].speedLinesRate;
+  speedLinesConfig.particlesPerSecondAtMaxSpeed = Math.floor(speedLinesConfig.particlesPerSecondAtMaxSpeed * rateMultiplier);
+  
+  const sparkRateMultiplier = PERFORMANCE_CONFIG[performanceTier].sparkRate;
+  sparksConfig.particlesPerGraze = Math.floor(sparksConfig.particlesPerGraze * sparkRateMultiplier);
+  sparksConfig.narrowRoadSparkRate = Math.floor(sparksConfig.narrowRoadSparkRate * sparkRateMultiplier);
+  
+  if (PERFORMANCE_CONFIG[performanceTier].disableWheelTrails) {
+    wheelTrailsConfig.enabled = false;
+  }
+}
+
 const followCamera = new FollowCamera(camera, CONFIG.camera);
-const speedLines = new SpeedLines(scene, CONFIG.speedLines);
-const sparks = new Sparks(scene, CONFIG.sparks);
-const wheelTrails = new WheelTrails(scene, CONFIG.wheelTrails);
+const speedLines = new SpeedLines(scene, speedLinesConfig, performanceTier);
+const sparks = new Sparks(scene, sparksConfig, performanceTier);
+const wheelTrails = new WheelTrails(scene, wheelTrailsConfig);
 const crashDebris = new CrashDebris(scene, {
   colors: [CONFIG.synthwave.walls.left.color, CONFIG.synthwave.walls.right.color, CONFIG.synthwave.car.color],
 });
@@ -518,6 +625,9 @@ function frame(ts) {
   const dtRaw = Math.min(0.033, (ts - lastTs) / 1000);
   lastTs = ts;
   
+  // Update performance metrics
+  updatePerformanceMetrics(dtRaw);
+  
   if (pointerSteerT > 0) {
     pointerSteerT = Math.max(0, pointerSteerT - dtRaw);
     if (pointerSteerT === 0) pointerSteer = 0;
@@ -618,7 +728,12 @@ requestAnimationFrame(frame);
 // Debug tools (clean, no ad testing)
 window.gameDebug = {
   getPerformanceMetrics: () => {
-    return { mobileMode: isMobile };
+    return { 
+      performanceTier: performanceTier,
+      currentFPS: currentFPS,
+      adaptiveRenderScale: adaptiveRenderScale,
+      isMobile: isMobile 
+    };
   }
 };
 

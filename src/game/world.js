@@ -59,17 +59,50 @@ class RoadGenerator {
 }
 
 export class World {
-  constructor(scene, config) {
+  constructor(scene, config, performanceTier = 'HIGH') {
     this.scene = scene;
     this.config = config;
+    this.performanceTier = performanceTier;
+    
+    // Import performance config
+    this._perfConfig = {
+      LOW: {
+        farDistance: 8,
+        midDistance: 4,
+        nearDistance: 2,
+        maxBuildings: 80,
+        roadSegments: 80
+      },
+      MEDIUM: {
+        farDistance: 12,
+        midDistance: 8,
+        nearDistance: 4,
+        maxBuildings: 120,
+        roadSegments: 120
+      },
+      HIGH: {
+        farDistance: 18,
+        midDistance: 12,
+        nearDistance: 6,
+        maxBuildings: 150,
+        roadSegments: 150
+      }
+    };
 
     this._tmpMatrix = new THREE.Matrix4();
     this._tmpPos = new THREE.Vector3();
     this._tmpQuat = new THREE.Quaternion();
     this._tmpScale = new THREE.Vector3();
 
-    this.segmentCount = config.road.visibleSegments;
+    // Use performance-tiered segment count
+    const tierConfig = this._perfConfig[performanceTier];
+    this.segmentCount = tierConfig.roadSegments;
     this.segLen = config.road.segmentLength;
+
+    // Frustum culling optimization
+    this._frustum = new THREE.Frustum();
+    this._cameraMatrix = new THREE.Matrix4();
+    this._cameraPos = new THREE.Vector3();
 
     this.roadGen = new RoadGenerator(config);
 
@@ -330,8 +363,26 @@ export class World {
 
   _writeBuildingInstance(instanceIndex, side, zCenter, centerX, width) {
     const cfg = this.config.city;
-
-    const shouldSpawn = Math.random() < cfg.spawnChancePerSegment;
+    const tierConfig = this._perfConfig[this.performanceTier];
+    
+    // Distance-based LOD calculation
+    const distance = Math.abs(zCenter - this._cameraPos.z);
+    const farDistance = tierConfig.farDistance;
+    const midDistance = tierConfig.midDistance;
+    const nearDistance = tierConfig.nearDistance;
+    
+    // Determine LOD level based on distance
+    let lodLevel = 'NEAR';
+    if (distance > farDistance) {
+      lodLevel = 'FAR';
+    } else if (distance > midDistance) {
+      lodLevel = 'MID';
+    }
+    
+    // Skip spawning based on LOD and performance tier
+    const spawnProbability = lodLevel === 'FAR' ? 0.4 : lodLevel === 'MID' ? 0.7 : 1.0;
+    const shouldSpawn = Math.random() < cfg.spawnChancePerSegment * spawnProbability;
+    
     if (!shouldSpawn) {
       this._tmpPos.set(0, -999, 0);
       this._tmpScale.set(0.001, 0.001, 0.001);
@@ -342,12 +393,27 @@ export class World {
 
     const sideOffset = width * 0.5 + this.config.road.wallThickness + randRange(cfg.nearOffset, cfg.farOffset);
 
-    const footprintX = randRange(cfg.minFootprint, cfg.maxFootprint);
-    const footprintZ = randRange(cfg.minFootprint, cfg.maxFootprint);
-    const height = randRange(cfg.minHeight, cfg.maxHeight);
+    // LOD-based building properties
+    let footprintX, footprintZ, height;
+    
+    if (lodLevel === 'FAR') {
+      // Very simple buildings for far LOD
+      footprintX = randRange(cfg.minFootprint * 0.8, cfg.maxFootprint * 0.6);
+      footprintZ = randRange(cfg.minFootprint * 0.8, cfg.maxFootprint * 0.6);
+      height = randRange(cfg.minHeight * 0.7, cfg.maxHeight * 0.5);
+    } else if (lodLevel === 'MID') {
+      // Medium detail
+      footprintX = randRange(cfg.minFootprint, cfg.maxFootprint * 0.8);
+      footprintZ = randRange(cfg.minFootprint, cfg.maxFootprint * 0.8);
+      height = randRange(cfg.minHeight, cfg.maxHeight * 0.8);
+    } else {
+      // Full detail for near buildings
+      footprintX = randRange(cfg.minFootprint, cfg.maxFootprint);
+      footprintZ = randRange(cfg.minFootprint, cfg.maxFootprint);
+      height = randRange(cfg.minHeight, cfg.maxHeight);
+    }
 
     // Position building so its bottom is at ground level (y=0)
-    // Building center at y=height/2 means bottom at y=0, top at y=height
     this._tmpPos.set(centerX + side * sideOffset, height * 0.5, zCenter + randRange(-0.25, 0.25) * this.segLen);
     this._tmpScale.set(footprintX, height, footprintZ);
     this._tmpMatrix.compose(this._tmpPos, this._tmpQuat.identity(), this._tmpScale);
@@ -358,6 +424,19 @@ export class World {
     const colorIndex = Math.floor(Math.random() * palette.length);
     this._buildingColor.setHex(palette[colorIndex]);
     this.buildings.setColorAt(instanceIndex, this._buildingColor);
+  }
+
+  // Camera frustum culling for buildings
+  _isBuildingInFrustum(position, size) {
+    // Simple distance-based culling first
+    const distance = position.distanceTo(this._cameraPos);
+    if (distance > this._perfConfig[this.performanceTier].farDistance * 2) {
+      return false;
+    }
+    
+    // Frustum bounds checking
+    const boundingSphere = new THREE.Sphere(position, size);
+    return this._frustum.intersectsSphere(boundingSphere);
   }
 
   _markDirty() {

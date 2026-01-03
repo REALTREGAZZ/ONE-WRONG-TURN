@@ -1,10 +1,18 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
 export class Sparks {
-  constructor(scene, config) {
+  constructor(scene, config, performanceTier = 'HIGH') {
     this.config = config;
+    this.performanceTier = performanceTier;
     this.particles = [];
     this._narrowRoadAccumulator = 0; // For particle emission rate control
+
+    // Particle pooling configuration
+    this.maxParticles = performanceTier === 'LOW' ? 15 : (performanceTier === 'MEDIUM' ? 30 : 50);
+    
+    // Object pool for particle objects to avoid creating new objects every frame
+    this._particlePool = [];
+    this._activeParticles = 0;
 
     const geometry = new THREE.PlaneGeometry(config.size, config.size);
     const material = new THREE.MeshBasicMaterial({
@@ -15,7 +23,7 @@ export class Sparks {
       depthWrite: false,
     });
 
-    this.mesh = new THREE.InstancedMesh(geometry, material, 200);
+    this.mesh = new THREE.InstancedMesh(geometry, material, this.maxParticles);
     this.mesh.count = 0;
     this.mesh.visible = false;
     scene.add(this.mesh);
@@ -24,25 +32,46 @@ export class Sparks {
     this._color = new THREE.Color();
   }
 
+  // Object pool helper methods
+  _getPooledParticle() {
+    if (this._particlePool.length > 0) {
+      return this._particlePool.pop();
+    }
+    // Create new particle object if pool is empty
+    return {};
+  }
+
+  _releaseParticle(particle) {
+    // Reset particle properties before returning to pool
+    particle.position = null;
+    particle.velocity = null;
+    this._particlePool.push(particle);
+  }
+
   emit(position, normal) {
     if (!this.config.enabled) return;
 
+    // Cap particle count to avoid overloading low-end devices
+    if (this._activeParticles >= this.maxParticles) return;
+
     const count = this.config.particlesPerGraze;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count && this._activeParticles < this.maxParticles; i++) {
       const spreadAngle = Math.random() * Math.PI * 2;
       const spreadSpeed = Math.random() * this.config.speed;
       const upwardSpeed = Math.random() * this.config.speed * 0.5;
 
-      this.particles.push({
-        position: position.clone(),
-        velocity: new THREE.Vector3(
-          Math.cos(spreadAngle) * spreadSpeed + normal.x * 2,
-          upwardSpeed,
-          Math.sin(spreadAngle) * spreadSpeed + normal.z * 2
-        ),
-        life: 0,
-        scale: 0.5 + Math.random() * 0.5,
-      });
+      const particle = this._getPooledParticle();
+      particle.position = position.clone();
+      particle.velocity = new THREE.Vector3(
+        Math.cos(spreadAngle) * spreadSpeed + normal.x * 2,
+        upwardSpeed,
+        Math.sin(spreadAngle) * spreadSpeed + normal.z * 2
+      );
+      particle.life = 0;
+      particle.scale = 0.5 + Math.random() * 0.5;
+
+      this.particles.push(particle);
+      this._activeParticles++;
     }
   }
 
@@ -53,32 +82,36 @@ export class Sparks {
     const leftSide = new THREE.Vector3(carPosition.x - carWidth * 0.6, carPosition.y, carPosition.z);
     const rightSide = new THREE.Vector3(carPosition.x + carWidth * 0.6, carPosition.y, carPosition.z);
 
-    // Emit from left side - particles shoot to the left (negative X)
-    for (let i = 0; i < 3; i++) {
-      this.particles.push({
-        position: leftSide.clone().add(new THREE.Vector3(-0.1, Math.random() * 0.2, 0)),
-        velocity: new THREE.Vector3(
-          -3 - Math.random() * 2, // Shoot left
-          Math.random() * 2,
+      // Emit from left side - particles shoot to the left (negative X)
+    for (let i = 0; i < 3 && this._activeParticles < this.maxParticles; i++) {
+      const particle = this._getPooledParticle();
+      particle.position = leftSide.clone().add(new THREE.Vector3(-0.1, Math.random() * 0.2, 0));
+      particle.velocity = new THREE.Vector3(
+        -3 - Math.random() * 2, // Shoot left
+        Math.random() * 2,
           (Math.random() - 0.5) * 2
-        ),
-        life: 0,
-        scale: 0.4 + Math.random() * 0.3,
-      });
+        );
+        particle.life = 0;
+      particle.scale = 0.4 + Math.random() * 0.3;
+      
+      this.particles.push(particle);
+      this._activeParticles++;
     }
 
     // Emit from right side - particles shoot to the right (positive X)
-    for (let i = 0; i < 3; i++) {
-      this.particles.push({
-        position: rightSide.clone().add(new THREE.Vector3(0.1, Math.random() * 0.2, 0)),
-        velocity: new THREE.Vector3(
-          3 + Math.random() * 2, // Shoot right
-          Math.random() * 2,
-          (Math.random() - 0.5) * 2
-        ),
-        life: 0,
-        scale: 0.4 + Math.random() * 0.3,
-      });
+    for (let i = 0; i < 3 && this._activeParticles < this.maxParticles; i++) {
+      const particle = this._getPooledParticle();
+      particle.position = rightSide.clone().add(new THREE.Vector3(0.1, Math.random() * 0.2, 0));
+      particle.velocity = new THREE.Vector3(
+        3 + Math.random() * 2, // Shoot right
+        Math.random() * 2,
+        (Math.random() - 0.5) * 2
+      );
+      particle.life = 0;
+      particle.scale = 0.4 + Math.random() * 0.3;
+      
+      this.particles.push(particle);
+      this._activeParticles++;
     }
   }
 
