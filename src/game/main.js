@@ -257,7 +257,10 @@ function currentSpeed() {
     CONFIG.difficulty.speed.baseSpeed + speedIncrement,
     CONFIG.difficulty.speed.maxSpeed
   );
-  const speedRatio = (speed - CONFIG.difficulty.speed.baseSpeed) / (CONFIG.difficulty.speed.maxSpeed - CONFIG.difficulty.speed.baseSpeed);
+  
+  const speedRange = CONFIG.difficulty.speed.maxSpeed - CONFIG.difficulty.speed.baseSpeed;
+  const speedRatio = speedRange <= 0 ? 0 : (speed - CONFIG.difficulty.speed.baseSpeed) / speedRange;
+  
   return { speed, speedRatio };
 }
 
