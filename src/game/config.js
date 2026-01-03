@@ -207,6 +207,8 @@ export const CONFIG = {
     color: 0xffff00,  // Yellow neon sparks
     grazeThreshold: 0.22, // How close to wall before emitting sparks
     speed: 8, // Particle explosion speed
+    narrowRoadThreshold: 4.5,  // Road width below this triggers extra sparks
+    narrowRoadSparkRate: 15,   // Particles per second when extremely narrow
   },
   crash: {
     freezeSeconds: 0.2, // Exact 0.2s slow-motion freeze
