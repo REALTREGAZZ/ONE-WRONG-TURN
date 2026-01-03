@@ -72,17 +72,37 @@ export class UI {
         if (side === 'right') this.steerRight = active;
       };
 
-      el.addEventListener('pointerdown', (e) => {
+      // Touch/click handlers
+      const onPressed = (e) => {
         if (this.mode !== 'playing') return;
         e.preventDefault();
-        el.setPointerCapture(e.pointerId);
         set(true);
-      });
+        if (el.setPointerCapture && e.pointerId !== undefined) {
+          el.setPointerCapture(e.pointerId);
+        }
+      };
 
-      const clear = () => set(false);
-      el.addEventListener('pointerup', clear);
-      el.addEventListener('pointercancel', clear);
-      el.addEventListener('lostpointercapture', clear);
+      const onReleased = (e) => {
+        if (this.mode !== 'playing') return;
+        e.preventDefault();
+        set(false);
+      };
+
+      // Mouse events (desktop click)
+      el.addEventListener('mousedown', onPressed);
+      el.addEventListener('mouseup', onReleased);
+      el.addEventListener('mouseleave', onReleased);
+
+      // Touch events (mobile)
+      el.addEventListener('touchstart', onPressed, { passive: false });
+      el.addEventListener('touchend', onReleased, { passive: false });
+      el.addEventListener('touchcancel', onReleased, { passive: false });
+
+      // Pointer events (modern browsers)
+      el.addEventListener('pointerdown', onPressed);
+      el.addEventListener('pointerup', onReleased);
+      el.addEventListener('pointercancel', onReleased);
+      el.addEventListener('lostpointercapture', onReleased);
     };
 
     bind(this.elTouchLeft, 'left');

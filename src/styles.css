@@ -792,11 +792,11 @@ body {
 /* Touch Controls */
 .touch-controls {
   position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: none;
-  gap: 20px;
+  gap: 0;
   z-index: 30;
   pointer-events: auto;
 }
@@ -808,25 +808,107 @@ body {
 }
 
 .touch-btn {
-  padding: 20px 40px;
-  font-family: var(--font-title);
-  font-size: 18px;
-  font-weight: 700;
-  background: rgba(0, 0, 0, 0.7);
-  border: 2px solid var(--color-secondary);
-  color: var(--color-secondary);
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  border-radius: 8px;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
   touch-action: none;
   user-select: none;
 }
 
-.touch-btn:active {
-  background: rgba(0, 255, 255, 0.3);
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
-  transform: scale(0.95);
+.control-left, .control-right {
+  position: fixed;
+  bottom: 20px;
+  width: 80px;
+  height: 100px;
+  touch-action: none;
+  user-select: none;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.control-left {
+  left: 20px;
+  color: #00ffff;  /* Cyan */
+  text-shadow: 0 0 10px #00ffff, 0 0 5px #00ffff;
+  opacity: 0.35;  /* Subtle on desktop */
+  font-weight: bold;
+}
+
+.control-right {
+  right: 20px;
+  color: #ff00ff;  /* Magenta */
+  text-shadow: 0 0 10px #ff00ff, 0 0 5px #ff00ff;
+  opacity: 0.35;  /* Subtle on desktop */
+  font-weight: bold;
+}
+
+.control-left:hover, .control-right:hover {
+  opacity: 0.5;  /* Slightly brighter on hover */
+}
+
+.control-left:active, .control-right:active {
+  opacity: 0.8;  /* Bright when pressed */
+}
+
+/* Mobile: Make more visible */
+@media (max-width: 768px) {
+  .control-left, .control-right {
+    opacity: 0.45;
+  }
+  
+  .control-left:active, .control-right:active {
+    opacity: 0.9;
+  }
+}
+
+/* Small phones (320px+) */
+@media (max-width: 480px) {
+  .control-left, .control-right {
+    width: 60px;
+    height: 80px;
+    bottom: 15px;
+    font-size: 2.5rem;
+  }
+  
+  .control-left {
+    left: 15px;
+  }
+  
+  .control-right {
+    right: 15px;
+  }
+}
+
+/* Medium phones (768px-) */
+@media (max-width: 768px) {
+  .control-left, .control-right {
+    width: 80px;
+    height: 100px;
+    bottom: 20px;
+  }
+}
+
+/* Large devices (768px+) */
+@media (min-width: 769px) {
+  .control-left, .control-right {
+    width: 80px;
+    height: 100px;
+    bottom: 30px;
+    opacity: 0.25;  /* Even more subtle on desktop */
+  }
 }
 
 /* Crash Flash Effect */
