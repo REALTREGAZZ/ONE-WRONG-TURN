@@ -10,7 +10,6 @@ export class UI {
 
     this.menuOverlay = document.getElementById('menu-overlay');
     this.crashOverlay = document.getElementById('crash-overlay');
-    this.shopOverlay = document.getElementById('shop-overlay');
     this.statsOverlay = document.getElementById('stats-overlay');
     this.hudOverlay = document.getElementById('hud-overlay');
     this.modeOverlay = document.getElementById('mode-overlay');
@@ -115,13 +114,12 @@ export class UI {
     this.hudOverlay.classList.remove('hidden');
   }
 
-  showCrash(distance, coinsEarned, speed, lastRun) {
+  showCrash(distance, speed, lastRun) {
     this.mode = 'crashed';
-    
+
     const message = pickRandom(DEATH_MESSAGES);
     document.getElementById('crash-msg').textContent = message;
     document.getElementById('crash-distance').textContent = Math.floor(distance) + 'M';
-    document.getElementById('crash-coins').textContent = '+' + coinsEarned;
     document.getElementById('crash-speed').textContent = Math.floor(speed);
 
     this.crashOverlay.classList.remove('hidden');
@@ -176,16 +174,6 @@ export class UI {
   setHintVisible(visible) {
     const hint = document.getElementById('hint');
     hint.style.opacity = visible ? '1' : '0';
-  }
-
-  showShop() {
-    this.mode = 'shop';
-    this.shopOverlay.classList.remove('hidden');
-    this.menuOverlay.classList.add('hidden');
-  }
-
-  hideShop() {
-    this.shopOverlay.classList.add('hidden');
   }
 
   showStats() {

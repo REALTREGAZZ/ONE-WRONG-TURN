@@ -58,10 +58,6 @@
               <span class="value" id="crash-distance">0M</span>
             </div>
             <div class="crash-stat">
-              <span class="label">COINS EARNED</span>
-              <span class="value coins" id="crash-coins">+0</span>
-            </div>
-            <div class="crash-stat">
               <span class="label">SPEED AT CRASH</span>
               <span class="value" id="crash-speed">0</span>
             </div>
@@ -86,19 +82,14 @@
         <div class="menu-container">
           <h1 class="game-title">ONE WRONG TURN</h1>
           <p class="subtitle">Push your limits. One mistake and you're done.</p>
-          
+
           <button id="btn-start" class="btn btn-primary big">PLAY</button>
-          <button id="btn-shop" class="btn btn-secondary big">SHOP</button>
           <button id="btn-stats" class="btn btn-tertiary big">STATS</button>
-          
+
           <div class="menu-stats">
             <div class="stat-item">
               <label>BEST DISTANCE</label>
               <value id="menu-best">0M</value>
-            </div>
-            <div class="stat-item">
-              <label>TOTAL COINS</label>
-              <value id="menu-coins">0</value>
             </div>
           </div>
         </div>
@@ -112,9 +103,9 @@
           <div class="mode-selector">
             <div class="mode-card" id="mode-normal" data-mode="normal">
               <div class="mode-name">NORMAL MODE</div>
-              <div class="mode-description">Constant speed, fixed road width. Pure skill test.</div>
+              <div class="mode-description">Balanced difficulty with gradual speed progression.</div>
               <div class="mode-stats">
-                <div class="mode-stat">Speed: <span class="highlight">25 u/s</span></div>
+                <div class="mode-stat">Speed: <span class="highlight">25 → 35 u/s</span></div>
                 <div class="mode-stat">Road: <span class="highlight">Fixed Width</span></div>
                 <div class="mode-stat">Turns: <span class="highlight">Moderate</span></div>
               </div>
@@ -139,33 +130,6 @@
         </div>
       </div>
       
-      <!-- Shop Overlay -->
-      <div id="shop-overlay" class="shop-overlay hidden">
-        <div class="shop-container">
-          <h2>CUSTOMIZE YOUR RIDE</h2>
-          
-          <div class="shop-tabs">
-            <button class="tab-btn active" data-tab="skins">SKINS</button>
-            <button class="tab-btn" data-tab="accessories">ACCESSORIES</button>
-          </div>
-          
-          <div class="coin-display shop-coin-display">
-            <div class="coin-icon">💰</div>
-            <span id="shop-coin-count">0</span>
-          </div>
-          
-          <div class="shop-content active" id="shop-skins">
-            <!-- Dynamic skins here -->
-          </div>
-          
-          <div class="shop-content hidden" id="shop-accessories">
-            <!-- Dynamic accessories here -->
-          </div>
-          
-          <button id="btn-back-shop" class="btn btn-back">BACK</button>
-        </div>
-      </div>
-
       <!-- Stats Overlay -->
       <div id="stats-overlay" class="stats-overlay hidden">
         <div class="stats-container">
@@ -174,10 +138,6 @@
             <div class="stat-item">
               <label>Best Distance</label>
               <span id="stats-best">0m</span>
-            </div>
-            <div class="stat-item">
-              <label>Total Coins</label>
-              <span id="stats-total-coins">0</span>
             </div>
             <div class="stat-item">
               <label>Games Played</label>

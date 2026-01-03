@@ -81,8 +81,9 @@ export class World {
   }
 
   _createEnvironment() {
-    // Ground/Floor mejorado - más ancho
-    const groundGeo = new THREE.PlaneGeometry(50, 2000); // Más ancho y largo
+    // Ground/Floor mejorado - más ancho para cubrir edificios lejanos
+    // Buildings can spawn up to ±40 X position (max offset 18 + road width + far offset)
+    const groundGeo = new THREE.PlaneGeometry(90, 2000); // Suficientemente ancho para cubrir edificios
     const groundMat = new THREE.MeshStandardMaterial({
       color: 0x1a1a3e,
       metalness: 0.3,
