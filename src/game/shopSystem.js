@@ -1,97 +1,130 @@
 export const SHOP_ITEMS = {
   skins: [
     {
-      id: 'yellow-neon',
-      name: 'Yellow Neon',
+      id: 'yellow',
+      name: 'Yellow',
       price: 0,
-      owned: true,
       color: 0xffff00,
-      description: 'The classic. Fast and furious.'
+      description: 'The classic. Bright and bold.'
     },
     {
-      id: 'cyan-ghost',
-      name: 'Cyan Ghost',
-      price: 150,
-      owned: false,
-      color: 0x00ffff,
-      description: 'Vanish into the night.'
+      id: 'blue',
+      name: 'Blue',
+      price: 1500,
+      color: 0x0066ff,
+      description: 'Cool and confident.'
     },
     {
-      id: 'magenta-phantom',
-      name: 'Magenta Phantom',
-      price: 150,
-      owned: false,
-      color: 0xff00ff,
-      description: 'Liquid metal aesthetic.'
+      id: 'copper',
+      name: 'Copper',
+      price: 3000,
+      color: 0xb87333,
+      description: 'Warm metallic shine.'
     },
     {
-      id: 'orange-blaze',
-      name: 'Orange Blaze',
-      price: 200,
-      owned: false,
-      color: 0xff6b35,
-      description: 'Leave a trail of fire.'
+      id: 'silver',
+      name: 'Silver',
+      price: 5000,
+      color: 0xc0c0c0,
+      description: 'Premium elegance.'
+    },
+    {
+      id: 'gold',
+      name: 'Gold',
+      price: 7500,
+      color: 0xffd700,
+      description: 'The ultimate luxury.'
+    },
+    {
+      id: 'diamond',
+      name: 'Brilliant Diamond',
+      price: 10000,
+      color: 0xe0ffff,
+      description: 'Radiant perfection.'
     }
   ]
-  // Accessories removed - keeping only skins
 };
 
 export class ShopSystem {
   constructor(coinSystem) {
     this.coinSystem = coinSystem;
-    this.selectedSkin = 'yellow-neon';
+    this.selectedSkin = 'yellow';
+    this.ownedSkins = new Set(['yellow']); // Yellow is owned by default
     this.loadProgress();
   }
-  
+
   purchaseItem(itemId) {
     const item = this.findItem(itemId);
     if (!item) return false;
-    
+
+    if (this.ownedSkins.has(itemId)) return false; // Already owned
+
     if (this.coinSystem.spendCoins(item.price)) {
-      item.owned = true;
+      this.ownedSkins.add(itemId);
       this.saveProgress();
       return true;
     }
     return false;
   }
-  
+
   findItem(itemId) {
     for (const item of SHOP_ITEMS.skins) {
       if (item.id === itemId) return item;
     }
     return null;
   }
-  
+
   applySkin(skinId) {
     const skin = SHOP_ITEMS.skins.find(s => s.id === skinId);
-    if (skin && skin.owned) {
+    if (skin && this.ownedSkins.has(skinId)) {
       this.selectedSkin = skinId;
       this.saveProgress();
       return true;
     }
     return false;
   }
-  
+
   getSelectedSkinColor() {
     const skin = SHOP_ITEMS.skins.find(s => s.id === this.selectedSkin);
     return skin ? skin.color : 0xffff00;
   }
-  
-  saveProgress() {
-    localStorage.setItem('owt_shop', JSON.stringify({
-      selectedSkin: this.selectedSkin
-    }));
+
+  isOwned(itemId) {
+    return this.ownedSkins.has(itemId);
   }
-  
+
+  canAfford(price) {
+    return this.coinSystem.getTotal() >= price;
+  }
+
+  saveProgress() {
+    const data = {
+      selectedSkin: this.selectedSkin,
+      ownedSkins: Array.from(this.ownedSkins)
+    };
+    localStorage.setItem('owt_shop', JSON.stringify(data));
+  }
+
   loadProgress() {
     const saved = localStorage.getItem('owt_shop');
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        this.selectedSkin = data.selectedSkin || 'yellow-neon';
+        this.selectedSkin = data.selectedSkin || 'yellow';
+        if (data.ownedSkins && Array.isArray(data.ownedSkins)) {
+          this.ownedSkins = new Set(data.ownedSkins);
+          // Ensure yellow is always owned
+          this.ownedSkins.add('yellow');
+        }
       } catch (e) {
-        console.warn('Could not load shop progress');
+        console.warn('Could not load shop progress', e);
       }
     }
+  }
+
+  reset() {
+    this.selectedSkin = 'yellow';
+    this.ownedSkins = new Set(['yellow']);
+    this.saveProgress();
   }
 }

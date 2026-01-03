@@ -12,6 +12,8 @@ import { SpeedLines } from './speedLines.js';
 import { Sparks } from './sparks.js';
 import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
+import { CoinSystem } from './coinSystem.js';
+import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
 
 const app = document.getElementById('app');
 
@@ -89,6 +91,9 @@ scene.add(sun);
 
 const audio = new AudioManager();
 
+const coinSystem = new CoinSystem();
+const shopSystem = new ShopSystem(coinSystem);
+
 const world = new World(scene, CONFIG);
 const car = new Car(CONFIG);
 scene.add(car.group);
@@ -104,7 +109,7 @@ const crashDebris = new CrashDebris(scene, {
 let lastTs = performance.now();
 let lastGrazeTime = 0;
 const GRAZE_COOLDOWN = 0.08;
-let mode = 'menu'; // 'menu' | 'playing' | 'crashed' | 'shop' | 'stats'
+let mode = 'menu'; // 'menu' | 'playing' | 'crashed' | 'shop' | 'stats' | 'mode-select'
 let freezeT = 0;
 let showDeathAfterFreeze = false;
 let distance = 0;
@@ -167,6 +172,7 @@ const ui = new UI({
   onRestart: () => restart(),
   onMenuClick: () => showMenu(),
   onModeSelect: (modeId) => selectGameMode(modeId),
+  onShopClick: () => showShop(),
   onPointerSteer: (steer) => {
     if (mode !== 'playing') return;
     pointerSteer = steer;
@@ -232,6 +238,9 @@ function crash() {
   gamesPlayed++;
   totalDistance += distance;
   lastRun = distance;
+
+  // Earn coins based on distance
+  coinSystem.earnCoins(distance);
 
   if (distance > best) {
     best = distance;
@@ -373,6 +382,58 @@ function showMenu() {
   document.getElementById('menu-best').textContent = Math.floor(best) + 'M';
 }
 
+function showShop() {
+  mode = 'shop';
+  ui.showShop();
+  // Render shop items with current state
+  ui.renderShopItems(
+    SHOP_ITEMS.skins,
+    shopSystem.ownedSkins,
+    shopSystem.selectedSkin,
+    coinSystem.getTotal(),
+    purchaseSkin,
+    selectSkin
+  );
+}
+
+function selectSkin(skinId) {
+  audio.playClick();
+  if (shopSystem.applySkin(skinId)) {
+    const skin = shopSystem.findItem(skinId);
+    if (skin) {
+      car.applySkin(skinId, skin.color);
+    }
+    // Re-render shop UI to update selected state
+    ui.renderShopItems(
+      SHOP_ITEMS.skins,
+      shopSystem.ownedSkins,
+      shopSystem.selectedSkin,
+      coinSystem.getTotal(),
+      purchaseSkin,
+      selectSkin
+    );
+  }
+}
+
+function purchaseSkin(skinId) {
+  audio.playClick();
+  if (shopSystem.purchaseItem(skinId)) {
+    const skin = shopSystem.findItem(skinId);
+    if (skin) {
+      car.applySkin(skinId, skin.color);
+    }
+    // Re-render shop UI
+    ui.renderShopItems(
+      SHOP_ITEMS.skins,
+      shopSystem.ownedSkins,
+      shopSystem.selectedSkin,
+      coinSystem.getTotal(),
+      purchaseSkin,
+      selectSkin
+    );
+  }
+}
+
 function showStats() {
   mode = 'stats';
   ui.showStats();
@@ -420,11 +481,19 @@ document.getElementById('btn-start')?.addEventListener('click', () => {
   showModeSelect();
 });
 
+document.getElementById('btn-shop')?.addEventListener('click', () => {
+  showShop();
+});
+
 document.getElementById('btn-stats')?.addEventListener('click', () => {
   showStats();
 });
 
 document.getElementById('btn-back-stats')?.addEventListener('click', () => {
+  showMenu();
+});
+
+document.getElementById('btn-back-shop')?.addEventListener('click', () => {
   showMenu();
 });
 
@@ -526,6 +595,12 @@ function frame(ts) {
 
 // Apply initial game mode configuration
 applyGameModeConfig(currentGameMode);
+
+// Apply selected skin
+const initialSkin = shopSystem.findItem(shopSystem.selectedSkin);
+if (initialSkin) {
+  car.applySkin(shopSystem.selectedSkin, initialSkin.color);
+}
 
 // Iniciar con el menú
 showMenu();

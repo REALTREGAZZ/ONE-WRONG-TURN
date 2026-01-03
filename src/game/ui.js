@@ -2,17 +2,19 @@ import { pickRandom } from './helpers.js';
 import { DEATH_MESSAGES } from './config.js';
 
 export class UI {
-  constructor({ onRestart, onPointerSteer, onMenuClick, onModeSelect }) {
+  constructor({ onRestart, onPointerSteer, onMenuClick, onModeSelect, onShopClick }) {
     this.onRestart = onRestart;
     this.onPointerSteer = onPointerSteer;
     this.onMenuClick = onMenuClick;
     this.onModeSelect = onModeSelect;
+    this.onShopClick = onShopClick;
 
     this.menuOverlay = document.getElementById('menu-overlay');
     this.crashOverlay = document.getElementById('crash-overlay');
     this.statsOverlay = document.getElementById('stats-overlay');
     this.hudOverlay = document.getElementById('hud-overlay');
     this.modeOverlay = document.getElementById('mode-overlay');
+    this.shopOverlay = document.getElementById('shop-overlay');
 
     this.elTouchControls = document.getElementById('touch-controls');
     this.elTouchLeft = document.getElementById('touch-left');
@@ -194,6 +196,66 @@ export class UI {
 
   hideModeSelect() {
     this.modeOverlay.classList.add('hidden');
+  }
+
+  showShop() {
+    this.mode = 'shop';
+    this.shopOverlay.classList.remove('hidden');
+    this.menuOverlay.classList.add('hidden');
+  }
+
+  hideShop() {
+    this.shopOverlay.classList.add('hidden');
+  }
+
+  renderShopItems(skins, ownedSkins, selectedSkin, totalCoins, onPurchase, onSelect) {
+    const container = document.getElementById('shop-items');
+    if (!container) return;
+
+    // Update coin display
+    const coinsEl = document.getElementById('shop-coins');
+    if (coinsEl) coinsEl.textContent = totalCoins;
+
+    container.innerHTML = '';
+
+    skins.forEach(skin => {
+      const isOwned = ownedSkins.has(skin.id);
+      const isSelected = selectedSkin === skin.id;
+      const canAfford = totalCoins >= skin.price;
+
+      const card = document.createElement('div');
+      card.className = `shop-card ${isSelected ? 'selected' : ''}`;
+      if (isOwned) card.classList.add('owned');
+
+      const colorHex = '#' + skin.color.toString(16).padStart(6, '0');
+
+      card.innerHTML = `
+        <div class="shop-card-preview">
+          <div class="shop-car-preview" style="background-color: ${colorHex}; box-shadow: 0 0 20px ${colorHex};"></div>
+        </div>
+        <div class="shop-card-info">
+          <div class="shop-card-name">${skin.name}</div>
+          <div class="shop-card-desc">${skin.description}</div>
+          <div class="shop-card-price">
+            ${isOwned ? 'OWNED' : skin.price + ' COINS'}
+          </div>
+        </div>
+        <button class="shop-card-btn ${isOwned ? 'btn-owned' : 'btn-buy'}" ${!isOwned && !canAfford ? 'disabled' : ''}>
+          ${isOwned ? (isSelected ? 'SELECTED' : 'SELECT') : 'BUY'}
+        </button>
+      `;
+
+      const btn = card.querySelector('.shop-card-btn');
+      btn.addEventListener('click', () => {
+        if (isOwned) {
+          onSelect(skin.id);
+        } else if (canAfford) {
+          onPurchase(skin.id);
+        }
+      });
+
+      container.appendChild(card);
+    });
   }
   
   showMenu() {

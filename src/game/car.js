@@ -132,9 +132,10 @@ export class Car {
     this.speed = this.config.baseSpeed;
     this.distance = 0;
 
-    // Adjusted Y position so wheels touch the ground
-    // Wheel center at -0.4, radius 0.15 => bottom at -0.55.
-    this.group.position.set(0, 0.55, 0);
+    // Adjust Y position so wheels touch the road (road at y=0.1)
+    // Wheel center at -0.4, radius 0.15 => wheel bottom at groupY - 0.4 - 0.15 = groupY - 0.55
+    // For wheels to touch road at y=0.1: groupY - 0.55 = 0.1 => groupY = 0.65
+    this.group.position.set(0, 0.65, 0);
 
     // Used for wall collision margin (radius should be slightly less than half of car width X = 1.2)
     this.radius = this.config.length * 0.45;
@@ -144,7 +145,7 @@ export class Car {
     this.yaw = 0;
     this.speed = this.config.baseSpeed;
     this.distance = 0;
-    this.group.position.set(0, 0.55, 0);
+    this.group.position.set(0, 0.65, 0);
     this.group.rotation.set(0, 0, 0);
     this.wheels.forEach(w => w.rotation.x = 0);
   }
@@ -182,27 +183,23 @@ export class Car {
     });
   }
 
-  applySkin(skinId) {
-    // Shop removed - use default yellow neon color only
-    const color = 0xffff00;
-
-    // Cambiar color del chasis
+  applySkin(skinId, color) {
+    // Apply skin color to chassis and cabin
     if (this.chassis) {
       this.chassis.material.color.setHex(color);
       this.chassis.material.emissive.setHex(color);
     }
 
-    // Cambiar color del techo/cabin
     if (this.cabin) {
       this.cabin.material.color.setHex(color);
       this.cabin.material.emissive.setHex(color);
     }
 
-    // Default windshield colors
+    // Default windshield colors (always cyan front, magenta back)
     if (this.windshieldFront) this.windshieldFront.material.color.setHex(0x00ffff);
     if (this.windshieldBack) this.windshieldBack.material.color.setHex(0xff00ff);
 
-    this.currentSkin = 'yellow-neon';
+    this.currentSkin = skinId;
   }
 
   applyAccessories(accessories) {

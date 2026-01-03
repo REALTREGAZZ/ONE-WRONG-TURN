@@ -84,6 +84,7 @@
           <p class="subtitle">Push your limits. One mistake and you're done.</p>
 
           <button id="btn-start" class="btn btn-primary big">PLAY</button>
+          <button id="btn-shop" class="btn btn-tertiary big">SHOP</button>
           <button id="btn-stats" class="btn btn-tertiary big">STATS</button>
 
           <div class="menu-stats">
@@ -149,6 +150,23 @@
             </div>
           </div>
           <button id="btn-back-stats" class="btn btn-back">BACK</button>
+        </div>
+      </div>
+
+      <!-- Shop Overlay -->
+      <div id="shop-overlay" class="shop-overlay hidden">
+        <div class="shop-container">
+          <h2>SHOP</h2>
+          <div class="shop-header">
+            <div class="shop-coins-display">
+              <span class="coins-icon">🪙</span>
+              <span id="shop-coins">0</span>
+            </div>
+          </div>
+          <div id="shop-items" class="shop-items">
+            <!-- Shop items will be rendered here -->
+          </div>
+          <button id="btn-back-shop" class="btn btn-back">BACK</button>
         </div>
       </div>
 

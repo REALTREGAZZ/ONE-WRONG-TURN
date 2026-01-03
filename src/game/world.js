@@ -81,9 +81,9 @@ export class World {
   }
 
   _createEnvironment() {
-    // Ground/Floor mejorado - full visible area coverage
-    // Buildings can spawn up to ±40 X position (max offset 18 + road width + far offset)
-    const groundGeo = new THREE.PlaneGeometry(70, 2000); // CONFIG.config.road.groundWidth = 70, full visible distance
+    // Ground/Floor - STATIC plane at y=0, never moves
+    // Extends beyond visible area to prevent gaps
+    const groundGeo = new THREE.PlaneGeometry(120, 3000);
     const groundMat = new THREE.MeshStandardMaterial({
       color: 0x1a1a3e,
       metalness: 0.3,
@@ -93,25 +93,10 @@ export class World {
     });
     this.ground = new THREE.Mesh(groundGeo, groundMat);
     this.ground.rotation.x = -Math.PI / 2;
-    this.ground.position.y = -0.35; // Positioned clearly behind buildings
-    this.ground.position.z = -1000; // Start far behind to continuously cover visible area
+    this.ground.position.y = 0; // Ground at y=0, static position
+    this.ground.position.z = 1000; // Center of the 3000 length plane
     this.ground.receiveShadow = true;
     this.scene.add(this.ground);
-
-    // Agregar "bermas" (bordes del camino) para evitar traspaso
-    const bermaLeft = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.2, 2000),
-      new THREE.MeshStandardMaterial({ color: 0x333333 })
-    );
-    bermaLeft.position.set(-5, -0.35, 0);
-    this.scene.add(bermaLeft);
-
-    const bermaRight = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.2, 2000),
-      new THREE.MeshStandardMaterial({ color: 0x333333 })
-    );
-    bermaRight.position.set(5, -0.35, 0);
-    this.scene.add(bermaRight);
   }
 
   _createRoadMeshes() {
@@ -268,11 +253,8 @@ export class World {
   }
 
   update(carZ) {
-    // Keep the plane under the action (cheap infinite ground illusion).
-    // Ground spans full visible area (70 units wide, 2000 units long)
-    // Position it to always cover the visible area behind car
-    this.ground.position.z = carZ - 1000; // Stay centered on visible area
-
+    // Ground is static at y=0, never moves
+    // Road segments recycle around the car
     const recycleBehind = this.segLen * 10;
     while (carZ - this.baseZ > recycleBehind) {
       this._recycleOne();
@@ -316,13 +298,13 @@ export class World {
     const zCenter = zStart + this.segLen * 0.5;
     const { centerX, width } = this.sampleRoad(zCenter);
 
-    // Road floor.
-    this._tmpPos.set(centerX, -0.12, zCenter);
-    this._tmpScale.set(width, 0.22, this.segLen);
+    // Road floor - positioned at y=0.1 to sit slightly above ground at y=0
+    this._tmpPos.set(centerX, 0.1, zCenter);
+    this._tmpScale.set(width, 0.2, this.segLen);
     this._tmpMatrix.compose(this._tmpPos, this._tmpQuat.identity(), this._tmpScale);
     this.roadMesh.setMatrixAt(instanceIndex, this._tmpMatrix);
 
-    // Walls.
+    // Walls - positioned to sit on ground at y=0
     const wallXOffset = width * 0.5 + this.config.road.wallThickness * 0.5;
 
     this._tmpPos.set(centerX - wallXOffset, this.config.road.wallHeight * 0.5, zCenter);
@@ -364,6 +346,8 @@ export class World {
     const footprintZ = randRange(cfg.minFootprint, cfg.maxFootprint);
     const height = randRange(cfg.minHeight, cfg.maxHeight);
 
+    // Position building so its bottom is at ground level (y=0)
+    // Building center at y=height/2 means bottom at y=0, top at y=height
     this._tmpPos.set(centerX + side * sideOffset, height * 0.5, zCenter + randRange(-0.25, 0.25) * this.segLen);
     this._tmpScale.set(footprintX, height, footprintZ);
     this._tmpMatrix.compose(this._tmpPos, this._tmpQuat.identity(), this._tmpScale);
