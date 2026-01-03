@@ -14,7 +14,6 @@ import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
 import { CoinSystem } from './coinSystem.js';
 import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
-import { RampSystem } from './ramps.js';
 
 const app = document.getElementById('app');
 
@@ -129,7 +128,6 @@ let pointerSteerT = 0;
 
 const coinSystem = new CoinSystem();
 const shopSystem = new ShopSystem(coinSystem);
-const rampSystem = new RampSystem(scene);
 
 // Guardar SHOP_ITEMS en CONFIG para acceso global
 CONFIG.SHOP_ITEMS = SHOP_ITEMS;
@@ -265,14 +263,13 @@ function currentSpeed() {
 
 function crash() {
   if (mode !== 'playing') return;
-  
+
   mode = 'crashed';
   freezeT = CONFIG.crash.freezeSeconds;
   showDeathAfterFreeze = true;
   hintT = 0;
-  
-  const multiplier = rampSystem.getMultiplier();
-  const earned = coinSystem.earnCoins(distance) * multiplier;
+
+  const earned = coinSystem.earnCoins(distance);
   gamesPlayed++;
   totalDistance += distance;
   lastRun = distance;
@@ -508,15 +505,6 @@ function frame(ts) {
 
     world.update(distance);
 
-    // Check ramp collisions
-    const rampCheck = rampSystem.checkCollision(car.group.position, distance);
-    if (rampCheck?.rampHit) {
-      rampSystem.showMultiplierUI((selectedMultiplier) => {
-        rampSystem.activateMultiplier(selectedMultiplier);
-        // Efecto visual: velocidad boost, partículas, etc
-      });
-    }
-
     const road = world.sampleRoad(distance);
     const collision = checkWallCollision(car, road);
 
@@ -540,7 +528,6 @@ function frame(ts) {
 
     followCamera.updateVelocityShake(dtRaw, speed, CONFIG.difficulty.speed.maxSpeed);
     followCamera.update(dtRaw, car.group, speedRatio);
-    rampSystem.update(Date.now());
   } else {
     followCamera.update(dtRaw, car.group, 0);
     wheelTrails.update(simDt, car, 0, CONFIG.difficulty.speed.maxSpeed);
