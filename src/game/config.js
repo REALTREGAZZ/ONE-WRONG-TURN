@@ -62,7 +62,7 @@ export const CONFIG = {
     speed: {
       baseSpeed: 25, // Base 25 units/sec (moderate)
       incrementPerSecond: 0.2, // +1 unit/sec every 5 seconds
-      maxSpeed: 60, // Peak around 60 units/sec
+      maxSpeed: 45, // Peak around 45 units/sec
     }
   },
   car: {
@@ -70,11 +70,11 @@ export const CONFIG = {
     length: 1.2,
     height: 0.8,
     baseSpeed: 25,
-    maxSpeed: 60,
+    maxSpeed: 45,
 
-    steeringRate: 2.0, // Controlled steering
+    steeringRate: 5.5, // Snappier steering (2.75x more responsive)
     maxYaw: Math.PI * 0.25, // Bounded maximum turn
-    autoCenterRate: 7.5,
+    autoCenterRate: 5.0,
     tiltAngle: 18, // Max tilt in degrees
   },
   wheelTrails: {
@@ -144,11 +144,11 @@ export const CONFIG = {
   },
   sparks: {
     enabled: true,
-    particlesPerGraze: 8,
+    particlesPerGraze: 12,
     lifespan: 0.2,
     size: 0.08,
     color: 0xffff00,  // Yellow neon sparks
-    grazeThreshold: 0.15, // How close to wall before emitting sparks
+    grazeThreshold: 0.25, // How close to wall before emitting sparks
     speed: 8, // Particle explosion speed
   },
   crash: {
