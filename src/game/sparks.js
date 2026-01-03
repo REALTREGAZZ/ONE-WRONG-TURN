@@ -4,6 +4,7 @@ export class Sparks {
   constructor(scene, config) {
     this.config = config;
     this.particles = [];
+    this._narrowRoadAccumulator = 0; // For particle emission rate control
 
     const geometry = new THREE.PlaneGeometry(config.size, config.size);
     const material = new THREE.MeshBasicMaterial({
@@ -45,7 +46,48 @@ export class Sparks {
     }
   }
 
+  // New method for narrow road sparks - emits particles outward from car sides
+  emitNarrowRoadSparks(carPosition, carWidth) {
+    if (!this.config.enabled) return;
+
+    const leftSide = new THREE.Vector3(carPosition.x - carWidth * 0.6, carPosition.y, carPosition.z);
+    const rightSide = new THREE.Vector3(carPosition.x + carWidth * 0.6, carPosition.y, carPosition.z);
+
+    // Emit from left side - particles shoot to the left (negative X)
+    for (let i = 0; i < 3; i++) {
+      this.particles.push({
+        position: leftSide.clone().add(new THREE.Vector3(-0.1, Math.random() * 0.2, 0)),
+        velocity: new THREE.Vector3(
+          -3 - Math.random() * 2, // Shoot left
+          Math.random() * 2,
+          (Math.random() - 0.5) * 2
+        ),
+        life: 0,
+        scale: 0.4 + Math.random() * 0.3,
+      });
+    }
+
+    // Emit from right side - particles shoot to the right (positive X)
+    for (let i = 0; i < 3; i++) {
+      this.particles.push({
+        position: rightSide.clone().add(new THREE.Vector3(0.1, Math.random() * 0.2, 0)),
+        velocity: new THREE.Vector3(
+          3 + Math.random() * 2, // Shoot right
+          Math.random() * 2,
+          (Math.random() - 0.5) * 2
+        ),
+        life: 0,
+        scale: 0.4 + Math.random() * 0.3,
+      });
+    }
+  }
+
   update(dt) {
+    // Handle narrow road spark emission based on rate
+    if (this._narrowRoadAccumulator > 0) {
+      this._narrowRoadAccumulator -= dt;
+    }
+
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.life += dt;
@@ -93,9 +135,27 @@ export class Sparks {
     }
   }
 
+  // New method to check and emit narrow road sparks based on rate
+  updateNarrowRoadSparks(dt, carPosition, carWidth, currentRoadWidth) {
+    if (currentRoadWidth >= this.config.narrowRoadThreshold) {
+      this._narrowRoadAccumulator = 0;
+      return;
+    }
+
+    // Add to accumulator based on the configured rate
+    this._narrowRoadAccumulator += dt * this.config.narrowRoadSparkRate;
+
+    // Emit sparks when accumulator reaches 1.0 (meaning 1 second worth of particles)
+    while (this._narrowRoadAccumulator >= 1.0) {
+      this.emitNarrowRoadSparks(carPosition, carWidth);
+      this._narrowRoadAccumulator -= 1.0;
+    }
+  }
+
   reset() {
     this.particles = [];
     this.mesh.count = 0;
     this.mesh.visible = false;
+    this._narrowRoadAccumulator = 0; // Reset accumulator
   }
 }

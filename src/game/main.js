@@ -118,6 +118,8 @@ let lastRun = 0;
 let gamesPlayed = Number(localStorage.getItem('owt_games_played') || '0');
 let totalDistance = Number(localStorage.getItem('owt_total_distance') || '0');
 
+let lastRoadWidth = CONFIG.road.baseWidth; // Track road width changes
+
 // Game mode state
 let currentGameMode = localStorage.getItem('owt_selected_mode') || 'normal';
 let normalModeCompleted = localStorage.getItem('owt_normal_completed') === 'true';
@@ -280,6 +282,7 @@ function completeRestart() {
   distance = 0;
   hintT = 3.5;
   lastGrazeTime = 0;
+  lastRoadWidth = CONFIG.road.baseWidth; // Reset road width tracker
 
   keys.left = false;
   keys.right = false;
@@ -360,6 +363,7 @@ function startRun() {
   distance = 0;
   hintT = 3.5;
   lastGrazeTime = 0;
+  lastRoadWidth = CONFIG.road.baseWidth; // Reset road width tracker
 
   car.reset();
   world.reset();
@@ -557,12 +561,19 @@ function frame(ts) {
     const road = world.sampleRoad(distance);
     const collision = checkWallCollision(car, road);
 
+    // Check for road width narrowing and trigger camera shake
+    if (road.width < lastRoadWidth - 0.3) { // Significant narrowing detected
+      followCamera.startNarrowingShake();
+    }
+    lastRoadWidth = road.width;
+
     if (collision.grazed) {
       const currentTime = ts / 1000;
       if (currentTime - lastGrazeTime >= GRAZE_COOLDOWN) {
         lastGrazeTime = currentTime;
         audio.playGraze();
         sparks.emit(car.group.position.clone(), collision.normal);
+        followCamera.startGrazeShake(); // Add graze shake
       }
     }
 
@@ -573,7 +584,10 @@ function frame(ts) {
     wheelTrails.update(simDt, car, speed, CONFIG.difficulty.speed.maxSpeed);
     speedLines.emit(speedRatio);
     speedLines.update(simDt, speedRatio);
+    
+    // Update sparks system with narrow road detection
     sparks.update(simDt);
+    sparks.updateNarrowRoadSparks(simDt, car.group.position, CONFIG.car.width, road.width);
 
     followCamera.updateVelocityShake(dtRaw, speedRatio);
     followCamera.update(dtRaw, car.group, speedRatio);

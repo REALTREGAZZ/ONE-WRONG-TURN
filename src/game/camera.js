@@ -28,6 +28,26 @@ export class FollowCamera {
     this._lastShake.set(0, 0, 0);
   }
 
+  // New method for graze shake
+  startGrazeShake() {
+    this._shakeTotal = 0.22; // Between 0.15-0.3s as requested
+    this._shakeT = this._shakeTotal;
+    this._shakeAmplitude0 = 0.3 + Math.random() * 0.1; // Between 0.2-0.4 as requested
+    this._shakeSampleT = 0;
+    this._shakeOffset.set(0, 0, 0);
+    this._lastShake.set(0, 0, 0);
+  }
+
+  // New method for road narrowing shake
+  startNarrowingShake() {
+    this._shakeTotal = 0.18;
+    this._shakeT = this._shakeTotal;
+    this._shakeAmplitude0 = 0.25; // Moderate shake for narrowing
+    this._shakeSampleT = 0;
+    this._shakeOffset.set(0, 0, 0);
+    this._lastShake.set(0, 0, 0);
+  }
+
   updateVelocityShake(dt, speedRatio) {
     this.camera.position.sub(this._lastVelocityShake);
     this._lastVelocityShake.set(0, 0, 0);
