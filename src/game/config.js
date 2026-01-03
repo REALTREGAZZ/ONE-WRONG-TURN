@@ -225,7 +225,6 @@ export const CONFIG = {
 
 export const DEATH_MESSAGES = [
   'TOO GREEDY',
-  'OVERCONFIDENT',
   'OUCH!',
   'CRASHED!',
   'GAME OVER',
