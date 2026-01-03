@@ -8,7 +8,7 @@ export function checkWallCollision(car, roadSample) {
     return { crashed: true, grazed: false };
   }
 
-  const grazeThreshold = 0.15;
+  const grazeThreshold = car.rootConfig?.sparks?.grazeThreshold || 0.15;
   const margin = half - grazeThreshold;
 
   if (distanceFromCenter > margin) {
