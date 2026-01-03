@@ -472,8 +472,7 @@ body {
   text-align: center;
   margin-bottom: 20px;
   text-shadow: 
-    0 0 20px #00ffff,
-    0 0 40px #ff00ff,
+    0 0 4px #00ffff,
     1px 1px 0px rgba(0, 0, 0, 0.8);
 }
 
@@ -490,18 +489,18 @@ body {
   font-size: 32px;
   color: #ffff00;  /* Yellow */
   text-shadow: 
-    0 0 5px #ffff00,
+    0 0 4px #ffff00,
     1px 1px 0px rgba(0, 0, 0, 0.8);
   font-family: 'Orbitron', sans-serif;
   background: rgba(0, 0, 0, 0.6);
   padding: 15px 30px;
   border: 2px solid #ffff00;
   border-radius: 8px;
-  box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.2);
 }
 
 .coins-icon {
-  filter: drop-shadow(0 0 10px #ffff00);
+  filter: drop-shadow(0 0 5px #ffff00);
 }
 
 .shop-tabs {
@@ -539,7 +538,7 @@ body {
   gap: 12px;
   font-size: 32px;
   color: var(--color-primary);
-  text-shadow: 0 0 20px var(--color-primary);
+  text-shadow: 0 0 4px var(--color-primary);
   justify-content: center;
 }
 
@@ -615,10 +614,10 @@ body {
 .shop-card-name {
   font-family: var(--font-title);
   font-size: 22px;
-  color: var(--color-primary);
+  color: #ffff00;
   margin-bottom: 8px;
-  text-shadow: 0 0 10px var(--color-primary);
-  font-weight: 700;
+  text-shadow: 0 0 3px #ffff00, 1px 1px 0px rgba(0, 0, 0, 0.8);
+  font-weight: 400;
 }
 
 .shop-card-desc {
@@ -630,11 +629,11 @@ body {
 
 .shop-card-price {
   font-size: 28px;
-  color: var(--color-primary);
+  color: #ffff00;
   font-weight: 700;
   margin-bottom: 5px;
   font-family: var(--font-title);
-  text-shadow: 0 0 15px var(--color-primary);
+  text-shadow: 0 0 4px #ffff00, 1px 1px 0px rgba(0, 0, 0, 0.8);
 }
 
 .shop-card-btn {
@@ -654,14 +653,16 @@ body {
 
 .shop-card-btn.btn-buy {
   background: transparent;
-  color: var(--color-primary);
-  border-color: var(--color-primary);
+  color: #00ffff;
+  border-color: #00ffff;
+  text-shadow: 0 0 4px #00ffff, 1px 1px 0px rgba(0, 0, 0, 0.8);
+  font-weight: 600;
 }
 
 .shop-card-btn.btn-buy:hover:not(:disabled) {
-  background: var(--color-primary);
+  background: #00ffff;
   color: var(--color-bg);
-  box-shadow: 0 0 20px var(--color-primary);
+  box-shadow: 0 0 20px #00ffff;
 }
 
 .shop-card-btn.btn-buy:disabled {
@@ -681,6 +682,50 @@ body {
   background: var(--color-secondary);
   color: var(--color-bg);
   box-shadow: 0 0 25px var(--color-secondary);
+}
+
+/* Brilliant Diamond special styling - EXTRA GLOW */
+.shop-card.brilliant-diamond .shop-card-name {
+  color: #00ffff;
+  font-weight: 900;
+  text-shadow: 
+    0 0 15px #00ffff,
+    0 0 8px #ff00ff,
+    0 0 4px #ffff00,
+    2px 2px 0px rgba(0, 0, 0, 0.9);
+  letter-spacing: 3px;
+  animation: diamond-pulse 2s ease-in-out infinite;
+}
+
+.shop-card.brilliant-diamond .shop-card-price {
+  color: #00ffff;
+  text-shadow: 
+    0 0 15px #00ffff,
+    0 0 8px #ff00ff,
+    2px 2px 0px rgba(0, 0, 0, 0.9);
+  font-weight: 900;
+}
+
+.shop-card.brilliant-diamond {
+  box-shadow: 0 0 20px #00ffff, 0 0 10px #ff00ff inset;
+  border: 2px solid #00ffff;
+}
+
+@keyframes diamond-pulse {
+  0%, 100% {
+    text-shadow: 
+      0 0 15px #00ffff,
+      0 0 8px #ff00ff,
+      0 0 4px #ffff00,
+      2px 2px 0px rgba(0, 0, 0, 0.9);
+  }
+  50% {
+    text-shadow: 
+      0 0 25px #00ffff,
+      0 0 15px #ff00ff,
+      0 0 8px #ffff00,
+      2px 2px 0px rgba(0, 0, 0, 0.9);
+  }
 }
 
 /* Stats Overlay */
