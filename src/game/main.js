@@ -12,8 +12,6 @@ import { SpeedLines } from './speedLines.js';
 import { Sparks } from './sparks.js';
 import { WheelTrails } from './wheelTrails.js';
 import { CrashDebris } from './crashDebris.js';
-import { CoinSystem } from './coinSystem.js';
-import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
 
 const app = document.getElementById('app');
 
@@ -131,12 +129,6 @@ const keys = {
 let pointerSteer = 0;
 let pointerSteerT = 0;
 
-const coinSystem = new CoinSystem();
-const shopSystem = new ShopSystem(coinSystem);
-
-// Guardar SHOP_ITEMS en CONFIG para acceso global
-CONFIG.SHOP_ITEMS = SHOP_ITEMS;
-
 // Apply game mode configuration to CONFIG
 function applyGameModeConfig(modeId) {
   const modeConfig = CONFIG.gameModes[modeId];
@@ -185,81 +177,6 @@ const ui = new UI({
 
 const crashFlashEl = document.getElementById('crash-flash');
 let crashFlashTimer = 0;
-
-function updateCoinDisplays() {
-  const totalCoins = coinSystem.getTotal();
-  const menuCoinsEl = document.getElementById('menu-coins');
-  const shopCoinCountEl = document.getElementById('shop-coin-count');
-  const statsTotalCoinsEl = document.getElementById('stats-total-coins');
-  
-  if (menuCoinsEl) menuCoinsEl.textContent = totalCoins;
-  if (shopCoinCountEl) shopCoinCountEl.textContent = totalCoins;
-  if (statsTotalCoinsEl) statsTotalCoinsEl.textContent = totalCoins;
-}
-
-// Renderizar tienda
-function renderShop() {
-  const skinsContainer = document.getElementById('shop-skins');
-  const accessoriesContainer = document.getElementById('shop-accessories');
-  
-  if (!skinsContainer || !accessoriesContainer) return;
-  
-  // Limpiar contenedores
-  skinsContainer.innerHTML = '';
-  accessoriesContainer.innerHTML = '';
-  
-  // Renderizar skins
-  SHOP_ITEMS.skins.forEach(skin => {
-    const itemEl = createShopItem(skin, 'skin');
-    skinsContainer.appendChild(itemEl);
-  });
-  
-  // Renderizar accesorios
-  SHOP_ITEMS.accessories.forEach(accessory => {
-    const itemEl = createShopItem(accessory, 'accessory');
-    accessoriesContainer.appendChild(itemEl);
-  });
-}
-
-function createShopItem(item, type) {
-  const itemEl = document.createElement('div');
-  itemEl.className = 'shop-item';
-  
-  const isSelected = type === 'skin' ? shopSystem.selectedSkin === item.id : shopSystem.isAccessoryActive(item.id);
-  const isOwned = item.owned;
-  
-  if (isSelected) itemEl.classList.add('selected');
-  if (isOwned) itemEl.classList.add('owned');
-  
-  itemEl.innerHTML = `
-    <div class="item-name">${item.name}</div>
-    <div class="item-description">${item.description}</div>
-    <div class="item-price ${isOwned ? 'owned' : ''}">${isOwned ? 'OWNED' : item.price}</div>
-  `;
-  
-  itemEl.addEventListener('click', () => {
-    if (isOwned) {
-      if (type === 'skin') {
-        shopSystem.applySkin(item.id);
-        car.applySkin(item.id);
-      } else {
-        shopSystem.toggleAccessory(item.id);
-        // Re-apply all active accessories
-        const activeAccessories = shopSystem.selectedAccessories || [];
-        car.applyAccessories(activeAccessories);
-      }
-      renderShop();
-    } else {
-      if (coinSystem.getTotal() >= item.price) {
-        shopSystem.purchaseItem(item.id);
-        updateCoinDisplays();
-        renderShop();
-      }
-    }
-  });
-  
-  return itemEl;
-}
 
 function crashFlash() {
   if (!crashFlashEl) return;
@@ -312,16 +229,15 @@ function crash() {
   showDeathAfterFreeze = true;
   hintT = 0;
 
-  const earned = coinSystem.earnCoins(distance);
   gamesPlayed++;
   totalDistance += distance;
   lastRun = distance;
-  
+
   if (distance > best) {
     best = distance;
     localStorage.setItem('owt_best', String(best));
   }
-  
+
   // Check if Normal Mode was completed (reached at least 100m) to unlock Hard Mode
   if (currentGameMode === 'normal' && distance >= 100 && !normalModeCompleted) {
     normalModeCompleted = true;
@@ -329,15 +245,15 @@ function crash() {
     localStorage.setItem('owt_normal_completed', 'true');
     console.log('Normal Mode completed! Hard Mode unlocked!');
   }
-  
+
   localStorage.setItem('owt_games_played', String(gamesPlayed));
   localStorage.setItem('owt_total_distance', String(totalDistance));
-  
+
   audio.playCrash();
   followCamera.startCrashShake();
   crashFlash();
   crashDebris.spawn(car.group.position, camera.position);
-  
+
   gameplayStop();
 }
 
@@ -353,7 +269,6 @@ function completeRestart() {
   freezeT = 0;
   showDeathAfterFreeze = false;
   distance = 0;
-  coinSystem.reset();
   hintT = 3.5;
   lastGrazeTime = 0;
 
@@ -369,15 +284,7 @@ function completeRestart() {
   sparks.reset();
   crashDebris.reset();
 
-  // APLICAR SKIN Y ACCESORIOS
-  const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
-  const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkin(selectedSkin);
-  car.applyAccessories(selectedAccessories);
-
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
-
-  updateCoinDisplays();
 
   gameplayStart();
 }
@@ -442,7 +349,6 @@ function startRun() {
   freezeT = 0;
   showDeathAfterFreeze = false;
   distance = 0;
-  coinSystem.reset();
   hintT = 3.5;
   lastGrazeTime = 0;
 
@@ -452,12 +358,6 @@ function startRun() {
   speedLines.reset();
   sparks.reset();
   crashDebris.reset();
-
-  // APLICAR SKIN Y ACCESORIOS
-  const selectedSkin = shopSystem.selectedSkin || 'yellow-neon';
-  const selectedAccessories = shopSystem.selectedAccessories || [];
-  car.applySkin(selectedSkin);
-  car.applyAccessories(selectedAccessories);
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
@@ -470,24 +370,13 @@ function startRun() {
 function showMenu() {
   mode = 'menu';
   ui.showMenu();
-  ui.hideShop();
-  ui.hideStats();
   document.getElementById('menu-best').textContent = Math.floor(best) + 'M';
-  updateCoinDisplays();
-}
-
-function showShop() {
-  mode = 'shop';
-  ui.showShop();
-  renderShop();
-  updateCoinDisplays();
 }
 
 function showStats() {
   mode = 'stats';
   ui.showStats();
   document.getElementById('stats-best').textContent = `${Math.floor(best)}m`;
-  document.getElementById('stats-total-coins').textContent = coinSystem.getTotal();
   document.getElementById('stats-games-played').textContent = gamesPlayed;
   document.getElementById('stats-total-distance').textContent = `${Math.floor(totalDistance)}m`;
 }
@@ -531,16 +420,8 @@ document.getElementById('btn-start')?.addEventListener('click', () => {
   showModeSelect();
 });
 
-document.getElementById('btn-shop')?.addEventListener('click', () => {
-  showShop();
-});
-
 document.getElementById('btn-stats')?.addEventListener('click', () => {
   showStats();
-});
-
-document.getElementById('btn-back-shop')?.addEventListener('click', () => {
-  showMenu();
 });
 
 document.getElementById('btn-back-stats')?.addEventListener('click', () => {
@@ -558,23 +439,6 @@ document.querySelectorAll('.mode-card').forEach(card => {
     if (modeId) {
       selectGameMode(modeId);
     }
-  });
-});
-
-// Tabs de tienda
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.tab;
-    
-    // Actualizar tabs activos
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    // Mostrar contenido correspondiente
-    document.querySelectorAll('.shop-content').forEach(content => {
-      content.classList.add('hidden');
-    });
-    document.getElementById(`shop-${tab}`).classList.remove('hidden');
   });
 });
 
@@ -605,9 +469,9 @@ function frame(ts) {
   
     if (freezeT === 0 && showDeathAfterFreeze) {
       showDeathAfterFreeze = false;
-      
+
       const { speed } = currentSpeed();
-      ui.showCrash(distance, coinSystem.getCurrentEarned(), speed, lastRun);
+      ui.showCrash(distance, speed, lastRun);
     }
   }
   
@@ -663,10 +527,6 @@ function frame(ts) {
 // Apply initial game mode configuration
 applyGameModeConfig(currentGameMode);
 
-// Aplicar skin inicial
-car.applySkin(shopSystem.selectedSkin);
-car.applyAccessories(shopSystem.selectedAccessories);
-
 // Iniciar con el menú
 showMenu();
 requestAnimationFrame(frame);
@@ -675,9 +535,7 @@ requestAnimationFrame(frame);
 window.gameDebug = {
   getPerformanceMetrics: () => {
     return { mobileMode: isMobile };
-  },
-  coinSystem,
-  shopSystem
+  }
 };
 
 console.log('One Wrong Turn - Ready for Poki');

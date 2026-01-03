@@ -183,58 +183,30 @@ export class Car {
   }
 
   applySkin(skinId) {
-    // Usar CONFIG.SHOP_ITEMS en lugar de parámetro shopSystem
-    const skins = this.rootConfig.SHOP_ITEMS?.skins || [];
-    const skin = skins.find(s => s.id === skinId);
-    if (!skin) return;
-    
-    const color = skin.color;
-    
+    // Shop removed - use default yellow neon color only
+    const color = 0xffff00;
+
     // Cambiar color del chasis
     if (this.chassis) {
       this.chassis.material.color.setHex(color);
       this.chassis.material.emissive.setHex(color);
     }
-    
+
     // Cambiar color del techo/cabin
     if (this.cabin) {
       this.cabin.material.color.setHex(color);
       this.cabin.material.emissive.setHex(color);
     }
-    
-    // Cambiar windshields a colores complementarios
-    const windshieldColors = {
-      'yellow-neon': { front: 0x00ffff, back: 0xff00ff },
-      'cyan-ghost': { front: 0xff00ff, back: 0xffff00 },
-      'magenta-phantom': { front: 0xffff00, back: 0x00ffff },
-      'orange-blaze': { front: 0x00ffff, back: 0xff1493 }
-    };
-    
-    const windColors = windshieldColors[skinId] || windshieldColors['yellow-neon'];
-    if (this.windshieldFront) this.windshieldFront.material.color.setHex(windColors.front);
-    if (this.windshieldBack) this.windshieldBack.material.color.setHex(windColors.back);
-    
-    this.currentSkin = skinId;
+
+    // Default windshield colors
+    if (this.windshieldFront) this.windshieldFront.material.color.setHex(0x00ffff);
+    if (this.windshieldBack) this.windshieldBack.material.color.setHex(0xff00ff);
+
+    this.currentSkin = 'yellow-neon';
   }
 
   applyAccessories(accessories) {
-    // Usar CONFIG.SHOP_ITEMS en lugar de parámetro shopSystem
-    const allAccessories = this.rootConfig.SHOP_ITEMS?.accessories || [];
-    
-    for (const accessoryId of accessories) {
-      const acc = allAccessories.find(a => a.id === accessoryId);
-      if (!acc) continue;
-      
-      if (acc.type === 'spoiler') {
-        this.addSpoiler();
-      } else if (acc.type === 'wheels') {
-        this.upgradeWheels(0xff6b35); // Chrome orange
-      } else if (acc.type === 'underglow') {
-        this.addUnderglow(0x00ffff);
-      } else if (acc.type === 'stripe') {
-        this.addRacingStripes();
-      }
-    }
+    // Shop removed - no accessories to apply
   }
 
   addSpoiler() {

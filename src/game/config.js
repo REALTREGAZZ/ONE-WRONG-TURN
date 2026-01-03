@@ -60,14 +60,14 @@ export const CONFIG = {
   gameModes: {
     normal: {
       name: 'NORMAL MODE',
-      description: 'Constant speed, fixed road width. Pure skill test.',
+      description: 'Balanced difficulty with gradual speed progression.',
       unlocked: true,
       difficulty: {
         maxDistance: 800,
         speed: {
           baseSpeed: 25,
-          incrementPerSecond: 0,
-          maxSpeed: 25,
+          incrementPerSecond: 0.08,
+          maxSpeed: 35,
         },
       },
       curve: {
@@ -80,7 +80,7 @@ export const CONFIG = {
       },
       turns: {
         baseInterval: 44,
-        minInterval: 44, // Consistent turn frequency
+        minInterval: 20, // Modest turn frequency increase
         baseDeltaX: 4.2,
         maxDeltaX: 8.5, // Moderate turns
       },
