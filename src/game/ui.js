@@ -242,6 +242,7 @@ export class UI {
       const card = document.createElement('div');
       card.className = `shop-card ${isSelected ? 'selected' : ''}`;
       if (isOwned) card.classList.add('owned');
+      if (skin.id === 'diamond') card.classList.add('brilliant-diamond');
 
       const colorHex = '#' + skin.color.toString(16).padStart(6, '0');
 
