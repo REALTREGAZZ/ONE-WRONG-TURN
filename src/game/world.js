@@ -81,18 +81,20 @@ export class World {
   }
 
   _createEnvironment() {
-    // Ground/Floor mejorado - más ancho para cubrir edificios lejanos
+    // Ground/Floor mejorado - full visible area coverage
     // Buildings can spawn up to ±40 X position (max offset 18 + road width + far offset)
-    const groundGeo = new THREE.PlaneGeometry(90, 2000); // Suficientemente ancho para cubrir edificios
+    const groundGeo = new THREE.PlaneGeometry(70, 2000); // CONFIG.config.road.groundWidth = 70, full visible distance
     const groundMat = new THREE.MeshStandardMaterial({
       color: 0x1a1a3e,
       metalness: 0.3,
       roughness: 0.7,
-      wireframe: false
+      wireframe: false,
+      depthWrite: true
     });
     this.ground = new THREE.Mesh(groundGeo, groundMat);
     this.ground.rotation.x = -Math.PI / 2;
-    this.ground.position.y = -0.5;
+    this.ground.position.y = -0.35; // Positioned clearly behind buildings
+    this.ground.position.z = -1000; // Start far behind to continuously cover visible area
     this.ground.receiveShadow = true;
     this.scene.add(this.ground);
 
@@ -267,7 +269,9 @@ export class World {
 
   update(carZ) {
     // Keep the plane under the action (cheap infinite ground illusion).
-    this.ground.position.z = carZ + this.config.road.groundWidth * 0.25;
+    // Ground spans full visible area (70 units wide, 2000 units long)
+    // Position it to always cover the visible area behind car
+    this.ground.position.z = carZ - 1000; // Stay centered on visible area
 
     const recycleBehind = this.segLen * 10;
     while (carZ - this.baseZ > recycleBehind) {
