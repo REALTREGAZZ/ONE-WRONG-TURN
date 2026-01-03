@@ -109,7 +109,7 @@ body {
   margin-bottom: 5px;
   font-family: 'Orbitron', sans-serif;
   font-weight: 400;
-  text-shadow: 0 0 8px #ffff00, 1px 1px 0px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 0 5px #ffff00, 1px 1px 0px rgba(0, 0, 0, 0.7);
 }
 
 .stat-item value {
@@ -119,10 +119,8 @@ body {
   color: #ffff00;  /* Neon yellow */
   font-family: 'Orbitron', sans-serif;
   text-shadow: 
-    0 0 10px #ffff00,
-    0 0 20px #00ffff,
-    0 0 30px #ff00ff,
-    2px 2px 0px rgba(0, 0, 0, 0.8);
+    0 0 5px #ffff00,
+    1px 1px 0px rgba(0, 0, 0, 0.8);
   letter-spacing: 2px;
 }
 
@@ -142,10 +140,8 @@ body {
   color: #00ffff;  /* Cyan for speed */
   font-family: 'Orbitron', sans-serif;
   text-shadow: 
-    0 0 15px #00ffff,
-    0 0 25px #ff00ff,
-    0 0 35px #ffff00,
-    2px 2px 0px rgba(0, 0, 0, 0.8);
+    0 0 5px #00ffff,
+    1px 1px 0px rgba(0, 0, 0, 0.8);
   letter-spacing: 2px;
 }
 
@@ -168,10 +164,8 @@ body {
   color: #ffff00;  /* Yellow for distance */
   font-family: 'Orbitron', sans-serif;
   text-shadow: 
-    0 0 20px #ffff00,
-    0 0 30px #00ffff,
-    0 0 40px #ff00ff,
-    2px 2px 0px rgba(0, 0, 0, 0.8);
+    0 0 5px #ffff00,
+    1px 1px 0px rgba(0, 0, 0, 0.8);
   letter-spacing: 2px;
 }
 
@@ -225,8 +219,7 @@ body {
   font-weight: 900;
   color: #ff00ff;  /* Magenta for game over */
   text-shadow: 
-    0 0 15px #ff00ff,
-    0 0 30px #00ffff,
+    0 0 8px #ff00ff,
     2px 2px 0px rgba(0, 0, 0, 0.9);
   animation: crashPunch 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   margin-bottom: 40px;
@@ -336,10 +329,8 @@ body {
   font-weight: 900;
   color: #ffff00;  /* Yellow */
   text-shadow: 
-    0 0 30px #ffff00,
-    0 0 60px #00ffff,
-    0 0 90px #ff00ff,
-    2px 2px 0px rgba(0, 0, 0, 0.8);
+    0 0 20px #ffff00,
+    1px 1px 0px rgba(0, 0, 0, 0.8);
   margin-bottom: 20px;
   letter-spacing: 4px;
 }
@@ -352,7 +343,7 @@ body {
   letter-spacing: 2px;
   font-family: 'Orbitron', sans-serif;
   font-weight: 400;
-  text-shadow: 0 0 15px #00ffff, 1px 1px 0px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 0 5px #00ffff, 1px 1px 0px rgba(0, 0, 0, 0.8);
 }
 
 .btn {
@@ -379,8 +370,7 @@ body {
   color: #00ffff;  /* Cyan */
   border-color: #00ffff;
   text-shadow: 
-    0 0 8px #00ffff,
-    0 0 16px #ff00ff,
+    0 0 5px #00ffff,
     1px 1px 0px rgba(0, 0, 0, 0.8);
   box-shadow: 0 0 15px #00ffff;
 }
@@ -396,8 +386,7 @@ body {
   color: #ff00ff;  /* Magenta */
   border-color: #ff00ff;
   text-shadow: 
-    0 0 8px #ff00ff,
-    0 0 16px #00ffff,
+    0 0 5px #ff00ff,
     1px 1px 0px rgba(0, 0, 0, 0.8);
   box-shadow: 0 0 15px #ff00ff;
 }
@@ -413,8 +402,7 @@ body {
   color: #ffff00;  /* Yellow */
   border-color: #ffff00;
   text-shadow: 
-    0 0 8px #ffff00,
-    0 0 16px #00ffff,
+    0 0 5px #ffff00,
     1px 1px 0px rgba(0, 0, 0, 0.8);
   box-shadow: 0 0 15px #ffff00;
 }
@@ -430,8 +418,7 @@ body {
   color: #ff00ff;  /* Magenta */
   border-color: #ff00ff;
   text-shadow: 
-    0 0 8px #ff00ff,
-    0 0 16px #00ffff,
+    0 0 5px #ff00ff,
     1px 1px 0px rgba(0, 0, 0, 0.8);
   box-shadow: 0 0 10px #ff00ff;
   margin-top: 30px;
@@ -503,8 +490,7 @@ body {
   font-size: 32px;
   color: #ffff00;  /* Yellow */
   text-shadow: 
-    0 0 20px #ffff00,
-    0 0 40px #00ffff,
+    0 0 5px #ffff00,
     1px 1px 0px rgba(0, 0, 0, 0.8);
   font-family: 'Orbitron', sans-serif;
   background: rgba(0, 0, 0, 0.6);
