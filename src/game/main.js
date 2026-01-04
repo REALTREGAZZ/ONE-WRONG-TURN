@@ -1,4 +1,4 @@
-// Platform Detection
+// ===== 1. PLATFORM DETECTION =====
 const isPoki = window.location.href.includes('poki.com');
 const isCrazy = window.location.href.includes('crazygames.com');
 const isItchio = window.location.href.includes('itch.io');
@@ -108,6 +108,7 @@ window.PlatformManager = {
   }
 };
 
+// ===== 2. IMPORTS =====
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { CONFIG, DEATH_MESSAGES } from './config.js';
 import { difficulty01, lerp, pickRandom } from './helpers.js';
@@ -126,16 +127,9 @@ import { ShopSystem, SHOP_ITEMS } from './shopSystem.js';
 
 const app = document.getElementById('app');
 
-// Mobile detection for performance optimizations
+// ===== 3. DEVICE DETECTION =====
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: false,
-  alpha: false,
-  powerPreference: 'high-performance',
-});
-
-// Detect device type and performance tier
 function getDeviceConfig() {
   const width = window.innerWidth;
   const isMobile = /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent);
@@ -173,29 +167,13 @@ function getDeviceConfig() {
 
 const deviceConfig = getDeviceConfig();
 
-// Dynamic canvas sizing based on device and window resizing
-function handleWindowResize() {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  
-  renderer.setSize(width, height);
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-  
-  // Adjust pixel ratio based on device
-  const isMobileDevice = /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent);
-  const pixelRatio = isMobileDevice ? 
-    Math.min(window.devicePixelRatio, 1.5) :  // Mobile: max 1.5x
-    Math.min(window.devicePixelRatio, 2);     // Desktop: max 2x
-  
-  renderer.setPixelRatio(pixelRatio);
-}
+// ===== 4. CREATE RENDERER =====
+const renderer = new THREE.WebGLRenderer({
+  antialias: false,
+  alpha: false,
+  powerPreference: 'high-performance',
+});
 
-// Call on load and resize
-handleWindowResize();
-window.addEventListener('resize', handleWindowResize);
-
-// Adjust pixel ratio based on device type
 renderer.setPixelRatio(deviceConfig.pixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x0a0a0f, 1);
@@ -208,6 +186,7 @@ renderer.domElement.tabIndex = 0;
 
 app?.prepend(renderer.domElement);
 
+// ===== 5. CREATE SCENE =====
 const scene = new THREE.Scene();
 
 // Create aggressive synthwave gradient background
@@ -236,9 +215,63 @@ function createGradientTexture() {
 scene.background = createGradientTexture();
 scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
 
+// ===== 6. CREATE CAMERA ← IMPORTANT: BEFORE handleWindowResize =====
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
+camera.position.set(0, CONFIG.camera.height, CONFIG.camera.distance);
 
-// Adjust camera FOV based on device and aspect ratio
+// ===== 7. ADD LIGHTS =====
+scene.add(new THREE.AmbientLight(0xffffff, CONFIG.synthwave.lights.ambient.intensity));
+
+// Cyan point light (left side)
+const cyanCfg = CONFIG.synthwave.lights.pointLights.cyan;
+const cyanLight = new THREE.PointLight(cyanCfg.color, cyanCfg.intensity, cyanCfg.distance);
+cyanLight.position.set(-4, 3, 2);
+scene.add(cyanLight);
+
+// Magenta point light (right side)
+const magentaCfg = CONFIG.synthwave.lights.pointLights.magenta;
+const magentaLight = new THREE.PointLight(magentaCfg.color, magentaCfg.intensity, magentaCfg.distance);
+magentaLight.position.set(4, 3, 2);
+scene.add(magentaLight);
+
+// Directional sun (for definition)
+const sun = new THREE.DirectionalLight(0xffffff, 0.4);
+sun.position.set(5, 12, -4);
+scene.add(sun);
+
+// ===== 8. CREATE GAME SYSTEMS =====
+const audio = new AudioManager();
+const coinSystem = new CoinSystem();
+const shopSystem = new ShopSystem(coinSystem);
+const world = new World(scene, CONFIG);
+const car = new Car(CONFIG);
+scene.add(car.group);
+const followCamera = new FollowCamera(camera, CONFIG.camera);
+const speedLines = new SpeedLines(scene, CONFIG.speedLines);
+const sparks = new Sparks(scene, CONFIG.sparks);
+const wheelTrails = new WheelTrails(scene, CONFIG.wheelTrails);
+const crashDebris = new CrashDebris(scene, {
+  colors: [CONFIG.synthwave.walls.left.color, CONFIG.synthwave.walls.right.color, CONFIG.synthwave.car.color],
+});
+
+// ===== 9. DEFINE handleWindowResize FUNCTION =====
+function handleWindowResize() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  
+  renderer.setSize(width, height);
+  camera.aspect = width / height;  // Now camera exists!
+  camera.updateProjectionMatrix();
+  
+  // Adjust pixel ratio based on device
+  const isMobileDevice = /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent);
+  const pixelRatio = isMobileDevice ? 
+    Math.min(window.devicePixelRatio, 1.5) :  // Mobile: max 1.5x
+    Math.min(window.devicePixelRatio, 2);     // Desktop: max 2x
+  
+  renderer.setPixelRatio(pixelRatio);
+}
+
 function adjustCameraForDevice() {
   const width = window.innerWidth;
   const height = window.innerHeight;
@@ -259,45 +292,100 @@ function adjustCameraForDevice() {
   camera.updateProjectionMatrix();
 }
 
+// ===== 10. CALL FUNCTIONS AFTER EVERYTHING EXISTS =====
+handleWindowResize();  // Now safe, camera exists!
 adjustCameraForDevice();
-window.addEventListener('resize', adjustCameraForDevice);
 
-// Reactive synthwave lighting system
-scene.add(new THREE.AmbientLight(0xffffff, CONFIG.synthwave.lights.ambient.intensity));
-
-// Cyan point light (left side)
-const cyanCfg = CONFIG.synthwave.lights.pointLights.cyan;
-const cyanLight = new THREE.PointLight(cyanCfg.color, cyanCfg.intensity, cyanCfg.distance);
-cyanLight.position.set(-4, 3, 2);
-scene.add(cyanLight);
-
-// Magenta point light (right side)
-const magentaCfg = CONFIG.synthwave.lights.pointLights.magenta;
-const magentaLight = new THREE.PointLight(magentaCfg.color, magentaCfg.intensity, magentaCfg.distance);
-magentaLight.position.set(4, 3, 2);
-scene.add(magentaLight);
-
-// Directional sun (for definition)
-const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-sun.position.set(5, 12, -4);
-scene.add(sun);
-
-const audio = new AudioManager();
-
-const coinSystem = new CoinSystem();
-const shopSystem = new ShopSystem(coinSystem);
-
-const world = new World(scene, CONFIG);
-const car = new Car(CONFIG);
-scene.add(car.group);
-
-const followCamera = new FollowCamera(camera, CONFIG.camera);
-const speedLines = new SpeedLines(scene, CONFIG.speedLines);
-const sparks = new Sparks(scene, CONFIG.sparks);
-const wheelTrails = new WheelTrails(scene, CONFIG.wheelTrails);
-const crashDebris = new CrashDebris(scene, {
-  colors: [CONFIG.synthwave.walls.left.color, CONFIG.synthwave.walls.right.color, CONFIG.synthwave.car.color],
+// ===== 11. ADD EVENT LISTENERS =====
+window.addEventListener('resize', () => {
+  handleWindowResize();
+  adjustCameraForDevice();
 });
+
+// ===== 12. SETUP CONTROL BUTTONS =====
+function setupControlButtons() {
+  const controlLeft = document.getElementById('controlLeft');
+  const controlRight = document.getElementById('controlRight');
+  
+  if (!controlLeft || !controlRight) {
+    console.error('Control buttons not found in DOM');
+    return;
+  }
+  
+  // Touch controls for mobile
+  let leftPressed = false;
+  let rightPressed = false;
+  
+  const updateKeys = () => {
+    keys.left = leftPressed;
+    keys.right = rightPressed;
+  };
+  
+  // Left button events
+  controlLeft.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    leftPressed = true;
+    updateKeys();
+  });
+  
+  controlLeft.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    leftPressed = false;
+    updateKeys();
+  });
+  
+  controlLeft.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    leftPressed = false;
+    updateKeys();
+  });
+  
+  // Right button events
+  controlRight.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    rightPressed = true;
+    updateKeys();
+  });
+  
+  controlRight.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    rightPressed = false;
+    updateKeys();
+  });
+  
+  controlRight.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    rightPressed = false;
+    updateKeys();
+  });
+  
+  // Mouse support for testing
+  controlLeft.addEventListener('mousedown', () => {
+    leftPressed = true;
+    updateKeys();
+  });
+  
+  controlLeft.addEventListener('mouseup', () => {
+    leftPressed = false;
+    updateKeys();
+  });
+  
+  controlRight.addEventListener('mousedown', () => {
+    rightPressed = true;
+    updateKeys();
+  });
+  
+  controlRight.addEventListener('mouseup', () => {
+    rightPressed = false;
+    updateKeys();
+  });
+  
+  // Prevent context menu on buttons
+  controlLeft.addEventListener('contextmenu', (e) => e.preventDefault());
+  controlRight.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+setupControlButtons();
 
 let lastTs = performance.now();
 let lastGrazeTime = 0;
