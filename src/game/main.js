@@ -135,8 +135,68 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance',
 });
 
-// Adjust pixel ratio for mobile vs desktop
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+// Detect device type and performance tier
+function getDeviceConfig() {
+  const width = window.innerWidth;
+  const isMobile = /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent);
+  const isTablet = /iPad|Android/i.test(navigator.userAgent) && width > 600;
+  
+  if (isTablet) {
+    return {
+      type: 'tablet',
+      segmentCount: 120,
+      maxParticles: 60,
+      pixelRatio: 1.5,
+      buildingLOD: 1,
+      controlOpacity: 0.40
+    };
+  } else if (isMobile && width < 600) {
+    return {
+      type: 'mobile',
+      segmentCount: 80,
+      maxParticles: 40,
+      pixelRatio: 1.0,
+      buildingLOD: 1.5,
+      controlOpacity: 0.50
+    };
+  } else {
+    return {
+      type: 'desktop',
+      segmentCount: 150,
+      maxParticles: 100,
+      pixelRatio: 2.0,
+      buildingLOD: 0.5,
+      controlOpacity: 0.25
+    };
+  }
+}
+
+const deviceConfig = getDeviceConfig();
+
+// Dynamic canvas sizing based on device and window resizing
+function handleWindowResize() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  
+  renderer.setSize(width, height);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  
+  // Adjust pixel ratio based on device
+  const isMobileDevice = /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent);
+  const pixelRatio = isMobileDevice ? 
+    Math.min(window.devicePixelRatio, 1.5) :  // Mobile: max 1.5x
+    Math.min(window.devicePixelRatio, 2);     // Desktop: max 2x
+  
+  renderer.setPixelRatio(pixelRatio);
+}
+
+// Call on load and resize
+handleWindowResize();
+window.addEventListener('resize', handleWindowResize);
+
+// Adjust pixel ratio based on device type
+renderer.setPixelRatio(deviceConfig.pixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x0a0a0f, 1);
 
@@ -177,6 +237,30 @@ scene.background = createGradientTexture();
 scene.fog = new THREE.Fog(CONFIG.synthwave.fog, 12, 180);
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 420);
+
+// Adjust camera FOV based on device and aspect ratio
+function adjustCameraForDevice() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const aspect = width / height;
+  
+  // Adjust FOV for different screen types
+  if (aspect < 1) {
+    // Portrait mode (mobile)
+    camera.fov = 65;
+  } else if (aspect < 1.5) {
+    // Standard aspect ratio (desktop/tablet)
+    camera.fov = 62;
+  } else {
+    // Wide screen (ultrawide monitor)
+    camera.fov = 58;
+  }
+  
+  camera.updateProjectionMatrix();
+}
+
+adjustCameraForDevice();
+window.addEventListener('resize', adjustCameraForDevice);
 
 // Reactive synthwave lighting system
 scene.add(new THREE.AmbientLight(0xffffff, CONFIG.synthwave.lights.ambient.intensity));
@@ -293,6 +377,9 @@ const ui = new UI({
     hintT = 0;
   },
 });
+
+// Initialize HUD for device
+ui.adjustHUDForDevice();
 
 const crashFlashEl = document.getElementById('crash-flash');
 let crashFlashTimer = 0;

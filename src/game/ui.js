@@ -308,4 +308,29 @@ export class UI {
       container.appendChild(card);
     });
   }
+
+  // Adjust HUD elements based on device viewport
+  adjustHUDForDevice() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    const hudContainer = document.querySelector('.hud-overlay');
+    const scoreDisplay = document.querySelector('.hud-top-left');
+    
+    if (!hudContainer || !scoreDisplay) return;
+    
+    if (width < 480) {
+      // Mobile: Compact HUD
+      hudContainer.style.padding = '10px';
+      scoreDisplay.style.marginBottom = '5px';
+    } else if (width < 1024) {
+      // Tablet: Medium HUD
+      hudContainer.style.padding = '15px';
+      scoreDisplay.style.marginBottom = '10px';
+    } else {
+      // Desktop: Full HUD
+      hudContainer.style.padding = '20px';
+      scoreDisplay.style.marginBottom = '15px';
+    }
+  }
 }
