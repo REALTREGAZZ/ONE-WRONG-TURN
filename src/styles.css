@@ -1114,34 +1114,362 @@ body {
   text-shadow: 0 0 10px var(--color-danger);
 }
 
-@media (max-width: 768px) {
-  .mode-container {
-    padding: 20px;
-  }
+/* COMPREHENSIVE RESPONSIVE DESIGN MEDIA QUERIES */
 
-  .mode-container h2 {
-    font-size: 24px;
+/* Mobile: Small screens (< 480px) */
+@media (max-width: 480px) {
+  body, html {
+    font-size: 14px;
+  }
+  
+  #app {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* HUD scaling for mobile */
+  .hud-top-left {
+    top: 15px;
+    left: 15px;
+    gap: 10px;
+  }
+  
+  .stat-item {
+    padding: 10px 15px;
+  }
+  
+  .stat-item label {
+    font-size: 10px;
+  }
+  
+  .stat-item value {
+    font-size: 1.5rem;
+  }
+  
+  .hud-center-top {
+    top: 15px;
+  }
+  
+  .hud-center-top span:first-child {
+    font-size: 2rem;
+  }
+  
+  .hud-bottom-center {
+    bottom: 30px;
+    font-size: 2.2rem;
+  }
+  
+  /* Control buttons larger and more visible on mobile */
+  .control-left, .control-right {
+    width: 70px;
+    height: 90px;
+    bottom: 15px;
+    font-size: 2rem;
+    opacity: 0.50;
+  }
+  
+  .control-left { 
+    left: 10px; 
+  }
+  
+  .control-right { 
+    right: 10px; 
+  }
+  
+  /* Touch target minimum size */
+  button, .touch-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Buttons more accessible on mobile */
+  button {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  
+  .btn.big {
+    padding: 18px 36px;
+    font-size: 1.1rem;
+  }
+  
+  .btn-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+  
+  /* Mobile game title sizing */
+  .game-title {
+    font-size: clamp(32px, 10vw, 60px);
+    margin-bottom: 15px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 30px;
+  }
+  
+  /* Mobile crash overlay adjustments */
+  .crash-message {
+    font-size: clamp(40px, 8vw, 80px);
     margin-bottom: 20px;
   }
-
-  .mode-selector {
-    flex-direction: column;
+  
+  .crash-stats {
+    padding: 20px;
+    margin-bottom: 20px;
     gap: 20px;
   }
-
-  .mode-card {
-    min-width: 100%;
+  
+  .crash-stat .value {
+    font-size: 24px;
   }
-
-  .mode-name {
-    font-size: 22px;
+  
+  .crash-buttons {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
   }
-
-  .mode-description {
-    font-size: 12px;
+  
+  .crash-buttons button {
+    width: 100%;
+    max-width: 280px;
   }
+}
 
-  .mode-stat {
-    font-size: 12px;
+/* Tablet: Medium screens (480px - 1024px) */
+@media (min-width: 481px) and (max-width: 1024px) {
+  body, html {
+    font-size: 16px;
+  }
+  
+  /* HUD scaling for tablet */
+  .hud-top-left {
+    top: 20px;
+    left: 20px;
+    gap: 15px;
+  }
+  
+  .stat-item {
+    padding: 12px 20px;
+  }
+  
+  .stat-item value {
+    font-size: 2rem;
+  }
+  
+  .hud-center-top span:first-child {
+    font-size: 2.8rem;
+  }
+  
+  .hud-bottom-center {
+    font-size: 3rem;
+  }
+  
+  .control-left, .control-right {
+    width: 80px;
+    height: 100px;
+    bottom: 20px;
+    font-size: 2.5rem;
+    opacity: 0.40;
+  }
+  
+  /* Touch target minimum size */
+  button, .touch-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  button {
+    padding: 14px 28px;
+    font-size: 1.1rem;
+  }
+  
+  .btn.big {
+    padding: 20px 48px;
+    font-size: 1.3rem;
+  }
+  
+  .game-title {
+    font-size: clamp(48px, 11vw, 70px);
+  }
+  
+  /* Tablet crash overlay */
+  .crash-message {
+    font-size: clamp(50px, 10vw, 100px);
+  }
+}
+
+/* Desktop: Large screens (> 1024px) */
+@media (min-width: 1025px) {
+  body, html {
+    font-size: 18px;
+  }
+  
+  /* HUD scaling for desktop */
+  .hud-top-left {
+    top: 30px;
+    left: 30px;
+    gap: 20px;
+  }
+  
+  .stat-item value {
+    font-size: 2.5rem;
+  }
+  
+  .hud-center-top span:first-child {
+    font-size: 3.5rem;
+  }
+  
+  .hud-bottom-center {
+    font-size: 4rem;
+  }
+  
+  .control-left, .control-right {
+    width: 80px;
+    height: 100px;
+    bottom: 30px;
+    font-size: 3rem;
+    opacity: 0.25;
+  }
+  
+  button {
+    padding: 16px 32px;
+    font-size: 1.2rem;
+  }
+  
+  .btn.big {
+    padding: 24px 64px;
+    font-size: 1.5rem;
+  }
+}
+
+/* Portrait orientation (mobile/tablet) */
+@media (orientation: portrait) {
+  .hud-container {
+    width: 100%;
+    padding: 10px;
+  }
+  
+  /* Stack HUD elements vertically in portrait */
+  .hud-top-left {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  /* Stack buttons vertically if needed */
+  .crash-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  /* Adjust touch controls for portrait */
+  .control-left, .control-right {
+    bottom: 10px;
+  }
+  
+  .control-left {
+    left: 5px;
+  }
+  
+  .control-right {
+    right: 5px;
+  }
+}
+
+/* Landscape orientation (desktop/tablet) */
+@media (orientation: landscape) {
+  .hud-container {
+    width: 100%;
+    padding: 20px;
+  }
+  
+  /* Display HUD elements horizontally in landscape */
+  .hud-top-left {
+    flex-direction: row;
+    gap: 20px;
+  }
+  
+  .crash-buttons {
+    flex-direction: row;
+    gap: 20px;
+  }
+}
+
+/* TOUCH-FRIENDLY IMPROVEMENTS */
+
+/* Touch targets should be at least 44x44px (Apple/Google guidelines) */
+button, .control-left, .control-right, .menu-item, .touch-btn, .btn-icon {
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+/* Improve touch feedback */
+button:active, .control-left:active, .control-right:active, .touch-btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+/* Remove text selection on touch devices */
+.hud-container, .menu-screen, .ui-overlay, .crash-overlay, .menu-overlay, .mode-overlay, .stats-overlay, .shop-overlay {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+/* Prevent zoom on double-tap for interactive elements */
+button, a, .control-left, .control-right, .touch-btn {
+  touch-action: manipulation;
+}
+
+/* Smooth transitions for better touch response */
+button, .touch-btn, .control-left, .control-right {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+/* Enhanced touch feedback for mobile devices */
+@media (hover: none) and (pointer: coarse) {
+  .touch-btn {
+    background: rgba(0, 255, 255, 0.15);
+    border: 2px solid var(--color-secondary);
+    border-radius: 8px;
+  }
+  
+  .touch-btn:active {
+    background: rgba(0, 255, 255, 0.3);
+    transform: scale(0.92);
+  }
+}
+
+/* Very small screens (< 360px) - extra compact mode */
+@media (max-width: 360px) {
+  .stat-item {
+    padding: 8px 12px;
+  }
+  
+  .stat-item value {
+    font-size: 1.2rem;
+  }
+  
+  .hud-center-top span:first-child {
+    font-size: 1.5rem;
+  }
+  
+  .hud-bottom-center {
+    font-size: 1.8rem;
+    bottom: 20px;
+  }
+  
+  .control-left, .control-right {
+    width: 60px;
+    height: 75px;
+    font-size: 1.5rem;
+  }
+  
+  .game-title {
+    font-size: clamp(24px, 8vw, 40px);
   }
 }
