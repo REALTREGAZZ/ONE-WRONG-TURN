@@ -228,7 +228,6 @@ export const DEATH_MESSAGES = [
   'OUCH!',
   'CRASHED!',
   'GAME OVER',
-  'YOU SUCK',
   'UNLUCKY',
   'BETTER LUCK NEXT TIME',
 ];
