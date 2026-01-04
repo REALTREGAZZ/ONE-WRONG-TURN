@@ -1,3 +1,113 @@
+// Platform Detection
+const isPoki = window.location.href.includes('poki.com');
+const isCrazy = window.location.href.includes('crazygames.com');
+const isItchio = window.location.href.includes('itch.io');
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+console.log(`Platform detected - Poki: ${isPoki}, CrazyGames: ${isCrazy}, Itch.io: ${isItchio}, Local: ${isLocal}`);
+
+// Universal Platform Manager
+window.PlatformManager = {
+  // Gameplay lifecycle
+  triggerGameplayStart() {
+    try {
+      if (isPoki && window.PokiSDK) {
+        PokiSDK.gameplayStart();
+        console.log('Poki: gameplayStart triggered');
+      } else if (isCrazy && window.CrazyGames && window.CrazyGames.SDK) {
+        window.CrazyGames.SDK.game.gameplayStart();
+        console.log('CrazyGames: gameplayStart triggered');
+      } else {
+        console.log('No platform SDK detected - gameplay start skipped');
+      }
+    } catch (e) {
+      console.error('Error triggering gameplay start:', e);
+    }
+  },
+
+  triggerGameplayStop() {
+    try {
+      if (isPoki && window.PokiSDK) {
+        PokiSDK.gameplayStop();
+        console.log('Poki: gameplayStop triggered');
+      } else if (isCrazy && window.CrazyGames && window.CrazyGames.SDK) {
+        window.CrazyGames.SDK.game.gameplayStop();
+        console.log('CrazyGames: gameplayStop triggered');
+      } else {
+        console.log('No platform SDK detected - gameplay stop skipped');
+      }
+    } catch (e) {
+      console.error('Error triggering gameplay stop:', e);
+    }
+  },
+
+  // Ad system wrapper
+  async triggerAd(type = 'midroll') {
+    try {
+      if (isPoki && window.PokiSDK) {
+        console.log('Poki: Requesting commercial break');
+        return await PokiSDK.commercialBreak();
+      } else if (isCrazy && window.CrazyGames && window.CrazyGames.SDK) {
+        console.log('CrazyGames: Requesting ad');
+        return await window.CrazyGames.SDK.ad.requestAd(type);
+      } else {
+        console.log('No platform SDK detected - ad skipped, game continues immediately');
+        // If no platform, game continues without ad
+        return { success: true };
+      }
+    } catch (e) {
+      console.error('Error requesting ad:', e);
+      // Gracefully handle ad failure
+      return { success: false };
+    }
+  },
+
+  // Initialize SDKs safely
+  async initialize() {
+    try {
+      if (isPoki && window.PokiSDK) {
+        console.log('Initializing Poki SDK...');
+        // Poki SDK already loaded via script tag
+        return true;
+      } else if (isCrazy && window.CrazyGames && window.CrazyGames.SDK) {
+        console.log('Initializing CrazyGames SDK...');
+        // CrazyGames SDK already loaded via script tag
+        return true;
+      } else {
+        console.log('Running in standalone mode (no platform SDK)');
+        return true;
+      }
+    } catch (e) {
+      console.error('Error initializing platform:', e);
+      return true; // Allow game to continue even if SDK init fails
+    }
+  },
+
+  // Rewarded ad wrapper
+  async requestRewardedAd() {
+    try {
+      if (isPoki && window.PokiSDK && window.PokiSDK.rewardedBreak) {
+        return await PokiSDK.rewardedBreak();
+      } else if (isCrazy && window.CrazyGames && window.CrazyGames.SDK.ad) {
+        return await window.CrazyGames.SDK.ad.requestAd('rewarded');
+      }
+      console.log('No platform SDK detected - rewarded ad skipped');
+      return { success: false };
+    } catch (e) {
+      console.error('Error requesting rewarded ad:', e);
+      return { success: false };
+    }
+  },
+
+  // Platform info getter
+  getPlatformName() {
+    if (isPoki) return 'Poki';
+    if (isCrazy) return 'CrazyGames';
+    if (isItchio) return 'Itch.io';
+    return 'Standalone';
+  }
+};
+
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { CONFIG, DEATH_MESSAGES } from './config.js';
 import { difficulty01, lerp, pickRandom } from './helpers.js';
@@ -7,7 +117,6 @@ import { checkWallCollision } from './collision.js';
 import { UI } from './ui.js';
 import { FollowCamera } from './camera.js';
 import { AudioManager } from './audio.js';
-import { gameplayStart, gameplayStop, showInterstitialAd } from './adSystem.js';
 import { SpeedLines } from './speedLines.js';
 import { Sparks } from './sparks.js';
 import { WheelTrails } from './wheelTrails.js';
@@ -265,7 +374,7 @@ function crash() {
   crashFlash();
   crashDebris.spawn(car.group.position, camera.position);
 
-  gameplayStop();
+  PlatformManager.triggerGameplayStop();
 }
 
 function restart() {
@@ -298,7 +407,7 @@ function completeRestart() {
 
   if (crashFlashEl) crashFlashEl.style.opacity = '0';
 
-  gameplayStart();
+  PlatformManager.triggerGameplayStart();
 }
 
 function selectGameMode(modeId) {
@@ -377,7 +486,7 @@ function startRun() {
   ui.hideMenu();
   ui.hideModeSelect();
 
-  gameplayStart();
+  PlatformManager.triggerGameplayStart();
 }
 
 function showMenu() {
@@ -611,6 +720,9 @@ if (initialSkin) {
   car.applySkin(shopSystem.selectedSkin, initialSkin.color);
 }
 
+// Initialize platform manager before game starts
+PlatformManager.initialize();
+
 // Iniciar con el menú
 showMenu();
 requestAnimationFrame(frame);
@@ -619,7 +731,10 @@ requestAnimationFrame(frame);
 window.gameDebug = {
   getPerformanceMetrics: () => {
     return { mobileMode: isMobile };
+  },
+  getPlatform() {
+    return window.PlatformManager ? window.PlatformManager.getPlatformName() : 'Unknown';
   }
 };
 
-console.log('One Wrong Turn - Ready for Poki');
+console.log(`One Wrong Turn - Ready for ${window.PlatformManager ? window.PlatformManager.getPlatformName() : 'Standalone'}`);

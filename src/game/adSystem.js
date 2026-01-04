@@ -1,55 +1,50 @@
-// Clean Poki SDK stubs (no external ad dependencies)
-// These forward to PokiSDK if available, otherwise do nothing
+// Universal Platform Manager wrapper
+// Uses window.PlatformManager for multi-platform support
 
-function getSDK() {
-  return globalThis.PokiSDK || null;
-}
-
-// Interstitial ad stub - Poki will call commercialBreak()
+// Interstitial ad wrapper
 export async function showInterstitialAd() {
-  const sdk = getSDK();
-  if (sdk?.commercialBreak) {
+  if (window.PlatformManager) {
     try {
-      await sdk.commercialBreak();
-    } catch {
-      // ignore
-    }
-  }
-  return false;
-}
-
-// Rewarded ad stub - Poki will call rewardedBreak()
-export async function showRewardedAd(rewardType) {
-  const sdk = getSDK();
-  if (sdk?.rewardedBreak) {
-    try {
-      return await sdk.rewardedBreak();
-    } catch {
+      await window.PlatformManager.triggerAd('midroll');
+      return true;
+    } catch (e) {
+      console.error('Error in showInterstitialAd:', e);
       return false;
     }
   }
   return false;
 }
 
-// Game state hooks for Poki
-export async function gameplayStart() {
-  const sdk = getSDK();
-  if (sdk?.gameplayStart) {
+// Rewarded ad wrapper  
+export async function showRewardedAd(rewardType) {
+  if (window.PlatformManager) {
     try {
-      sdk.gameplayStart();
-    } catch {
-      // ignore
+      return await window.PlatformManager.requestRewardedAd();
+    } catch (e) {
+      console.error('Error in showRewardedAd:', e);
+      return false;
+    }
+  }
+  return false;
+}
+
+// Game state hooks wrapper
+export async function gameplayStart() {
+  if (window.PlatformManager) {
+    try {
+      window.PlatformManager.triggerGameplayStart();
+    } catch (e) {
+      console.error('Error in gameplayStart:', e);
     }
   }
 }
 
 export async function gameplayStop() {
-  const sdk = getSDK();
-  if (sdk?.gameplayStop) {
+  if (window.PlatformManager) {
     try {
-      sdk.gameplayStop();
-    } catch {
-      // ignore
+      window.PlatformManager.triggerGameplayStop();
+    } catch (e) {
+      console.error('Error in gameplayStop:', e);
     }
   }
 }

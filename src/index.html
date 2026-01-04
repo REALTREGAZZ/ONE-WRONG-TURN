@@ -9,6 +9,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <!-- Platform SDKs (safe loading with error handling) -->
+    <script>
+      window.addEventListener('error', function(e) {
+        if (e.target && (e.target.src || '').includes('poki.com') || (e.target.src || '').includes('crazygames.com')) {
+          console.warn('Failed to load platform SDK, game will run in standalone mode');
+        }
+      });
+    </script>
+    
+    <!-- Poki SDK -->
+    <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+    
+    <!-- CrazyGames SDK -->
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
   </head>
   <body>
     <div id="app">
