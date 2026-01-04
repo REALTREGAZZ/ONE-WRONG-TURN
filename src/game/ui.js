@@ -31,6 +31,20 @@ export class UI {
   }
 
   setupEventListeners() {
+    // Poki testing: Press 'H' to toggle hard mode lock for testing
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'h' || e.key === 'H') {
+        // Unlock hard mode for testing
+        localStorage.setItem('owt_normal_completed', 'true');
+        console.log('Hard Mode unlocked for testing - press H again to re-lock');
+        
+        // Update the hard mode unlock state globally
+        if (window.hardModeUnlocked !== undefined) {
+          window.hardModeUnlocked = true;
+        }
+      }
+    });
+
     document.getElementById('btn-restart-now').addEventListener('click', () => {
       this.clearRestartCountdown();
       this.hideCrash();

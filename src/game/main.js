@@ -6,17 +6,17 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 
 console.log(`Platform detected - Poki: ${isPoki}, CrazyGames: ${isCrazy}, Itch.io: ${isItchio}, Local: ${isLocal}`);
 
-// Universal Platform Manager
+// Enhanced PlatformManager with better logging
 window.PlatformManager = {
   // Gameplay lifecycle
   triggerGameplayStart() {
     try {
       if (isPoki && window.PokiSDK) {
         PokiSDK.gameplayStart();
-        console.log('Poki: gameplayStart triggered');
+        console.log('✓ Poki: gameplayStart triggered');
       } else if (isCrazy && window.CrazyGames && window.CrazyGames.SDK) {
         window.CrazyGames.SDK.game.gameplayStart();
-        console.log('CrazyGames: gameplayStart triggered');
+        console.log('✓ CrazyGames: gameplayStart triggered');
       } else {
         console.log('No platform SDK detected - gameplay start skipped');
       }
@@ -29,10 +29,10 @@ window.PlatformManager = {
     try {
       if (isPoki && window.PokiSDK) {
         PokiSDK.gameplayStop();
-        console.log('Poki: gameplayStop triggered');
+        console.log('✓ Poki: gameplayStop triggered');
       } else if (isCrazy && window.CrazyGames && window.CrazyGames.SDK) {
         window.CrazyGames.SDK.game.gameplayStop();
-        console.log('CrazyGames: gameplayStop triggered');
+        console.log('✓ CrazyGames: gameplayStop triggered');
       } else {
         console.log('No platform SDK detected - gameplay stop skipped');
       }
@@ -232,7 +232,9 @@ let lastRoadWidth = CONFIG.road.baseWidth; // Track road width changes
 // Game mode state
 let currentGameMode = localStorage.getItem('owt_selected_mode') || 'normal';
 let normalModeCompleted = localStorage.getItem('owt_normal_completed') === 'true';
-let hardModeUnlocked = normalModeCompleted;
+
+// For Poki testing: always unlock hard mode on Poki platform
+let hardModeUnlocked = normalModeCompleted || isPoki;
 
 let hintT = 4.0;
 let pulseTime = 0;
@@ -737,4 +739,4 @@ window.gameDebug = {
   }
 };
 
-console.log(`One Wrong Turn - Ready for ${window.PlatformManager ? window.PlatformManager.getPlatformName() : 'Standalone'}`);
+console.log(`One Wrong Turn - Ready for ${window.PlatformManager ? window.PlatformManager.getPlatformName() : 'Standalone'} mode`);
